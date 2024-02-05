@@ -50,9 +50,9 @@ dependencies {
 
 	implementation(project(mapOf("path" to ":domain")))
 	implementation(project(mapOf("path" to ":data")))
-	implementation("io.reactivex.rxjava3:rxandroid:3.0.2")
-	implementation("io.reactivex.rxjava3:rxjava:3.1.5")
-	implementation("androidx.compose.runtime:runtime-rxjava3:1.5.4")
+	//implementation("io.reactivex.rxjava3:rxandroid:3.0.2")
+	//implementation("io.reactivex.rxjava3:rxjava:3.1.5")
+	//implementation("androidx.compose.runtime:runtime-rxjava3:1.5.4")
 	implementation("androidx.core:core-ktx:1.9.0")
 	implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
 	implementation("androidx.activity:activity-compose:1.8.0")
@@ -71,4 +71,6 @@ dependencies {
 	androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 	debugImplementation("androidx.compose.ui:ui-tooling")
 	debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+	implementation("androidx.appcompat:appcompat:1.6.1")
 }
