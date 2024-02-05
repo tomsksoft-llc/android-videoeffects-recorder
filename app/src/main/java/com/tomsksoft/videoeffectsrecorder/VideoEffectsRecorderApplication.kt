@@ -4,12 +4,14 @@ import android.app.Application
 import android.app.UiModeManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
+import com.tomsksoft.videoeffectsrecorder.domain.Effects
 
 class VideoEffectsRecorderApplication : Application() {
 
 
 	override fun onCreate() {
 		super.onCreate()
+		Effects.initialize(applicationContext)
 		forceLightTheme()
 	}
 

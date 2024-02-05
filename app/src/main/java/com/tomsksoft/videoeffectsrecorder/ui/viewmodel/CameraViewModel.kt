@@ -8,7 +8,7 @@ class CameraViewModel: ViewModel() {
 
     fun changeFlashMode() {
         val values = FlashMode.values()
-        flashMode.value = values[(values.indexOf(flashMode.value) + 1) % values.size]
+        flashMode.value = values[(values.indexOf(flashMode.value) + 1) % values.size] // next mode
     }
 
     enum class FlashMode {
