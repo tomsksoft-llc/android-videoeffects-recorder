@@ -24,13 +24,13 @@ object UiRouter {
 		Scaffold { innerPadding ->
 			NavHost(
 				navController = navController,
-				startDestination = "SplashScreen",
+				startDestination = "CameraScreen",
 				modifier = Modifier
 					.fillMaxSize()
 					.verticalScroll(rememberScrollState())
 					.padding(innerPadding)
 			) {
-				composable(route = "SplashScreen") {
+				composable(route = "CameraScreen") {
 					CameraScreen(
 						viewModel<CameraViewModel>()
 					)
