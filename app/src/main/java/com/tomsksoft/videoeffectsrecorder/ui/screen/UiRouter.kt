@@ -27,7 +27,6 @@ object UiRouter {
 				startDestination = "SplashScreen",
 				modifier = Modifier
 					.fillMaxSize()
-					.verticalScroll(rememberScrollState())
 					.padding(innerPadding)
 			) {
 				composable(route = "SplashScreen") {
