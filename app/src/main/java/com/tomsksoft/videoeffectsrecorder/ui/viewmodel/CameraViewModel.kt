@@ -4,13 +4,12 @@ import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.VideoEffectsRecorderApplication
 import com.tomsksoft.videoeffectsrecorder.data.EffectsCamera
 import com.tomsksoft.videoeffectsrecorder.data.Frame
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
-import com.tomsksoft.videoeffectsrecorder.domain.VideoConfig
+import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -22,7 +21,7 @@ class CameraViewModel(app: VideoEffectsRecorderApplication): AndroidViewModel(ap
     private val context: Context
         get() = getApplication()
     private val camera: Camera<Frame> = EffectsCamera(context).apply {
-        configure(VideoConfig())
+        configure(CameraConfig())
         subscribe { onNewFrame(it.bitmap) }
         isEnabled = true
     }
