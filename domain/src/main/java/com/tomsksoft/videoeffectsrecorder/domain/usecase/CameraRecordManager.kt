@@ -1,4 +1,7 @@
-package com.tomsksoft.videoeffectsrecorder.domain
+package com.tomsksoft.videoeffectsrecorder.domain.usecase
+
+import com.tomsksoft.videoeffectsrecorder.domain.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.VideoRepository
 
 class CameraRecordManager<T: Camera<F>, F>(
     camera: T,
