@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -43,8 +45,8 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
 fun CameraScreen(
 	@PreviewParameter(CameraViewModelProvider::class) viewModel: CameraViewModel
 ) {
-	val flashMode by remember { viewModel.flashMode }
-	val frame by remember { viewModel.frame }
+	val flashMode by viewModel.flashMode.collectAsState()
+	val frame by viewModel.frame.collectAsState()
 	Column(modifier = Modifier.fillMaxHeight()) {
 		Row(
 			horizontalArrangement = Arrangement.Absolute.SpaceAround,
@@ -55,7 +57,7 @@ fun CameraScreen(
 				.padding(vertical = 8.dp)
 		) {
 			ImageButton( // flash
-				painter = painterResource(when (viewModel.flashMode.value) {
+				painter = painterResource(when (flashMode) {
 					CameraViewModel.FlashMode.AUTO -> R.drawable.ic_flash_auto
 					CameraViewModel.FlashMode.ON -> R.drawable.ic_flash_on
 					CameraViewModel.FlashMode.OFF -> R.drawable.ic_flash_off
@@ -96,7 +98,12 @@ fun CameraScreen(
 						fontSize = 16.sp
 					)
 				}
-			else Image(bitmap = frame!!.asImageBitmap(), contentDescription = null)
+			else Image(
+				bitmap = frame!!.asImageBitmap(),
+				contentDescription = null,
+				contentScale = ContentScale.FillWidth,
+				modifier = Modifier.fillMaxSize()
+			)
 		}
 	}
 }

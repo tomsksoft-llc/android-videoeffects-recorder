@@ -21,5 +21,7 @@ class CameraEffectsManager<T: Camera<*>>(
             updateConfiguration()
         }
 
+    init { updateConfiguration() }
+
     private fun updateConfiguration() = configurer.configure(camera, config)
 }

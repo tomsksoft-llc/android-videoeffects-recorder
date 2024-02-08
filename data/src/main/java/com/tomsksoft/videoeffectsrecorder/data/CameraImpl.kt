@@ -40,11 +40,10 @@ class CameraImpl(
     private fun enable() {
         pipeline.startPipeline()
         pipeline.setOnFrameAvailableListener { bitmap ->
-            Log.d("Camera", "Frame is received in thread: ${Thread.currentThread().name}")
             subscribers.forEach { it.onFrame(Frame(bitmap)) }
         }
         pipeline.setOrientationChangeListener { orientation, rotation ->
-            Log.d("Camera", "$orientation $rotation")
+            Log.d("Camera", "$orientation $rotation") // TODO [tva] notify UI to rotate icons
         }
     }
 

@@ -42,4 +42,8 @@ dependencies {
 	implementation("com.google.flogger:flogger-system-backend:0.6")
 	implementation("com.google.guava:guava:27.0.1-android")
 	implementation(files("libs/effects.aar"))
+	implementation("androidx.camera:camera-camera2:1.2.0")
+	implementation("androidx.camera:camera-extensions:1.2.0")
+	implementation("androidx.camera:camera-lifecycle:1.2.0")
+	implementation("androidx.camera:camera-view:1.2.0")
 }
