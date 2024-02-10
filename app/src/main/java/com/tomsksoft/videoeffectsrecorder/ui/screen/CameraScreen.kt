@@ -29,14 +29,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -55,7 +56,7 @@ fun CameraScreen(
 	@PreviewParameter(CameraViewModelProvider::class) viewModel: CameraViewModel
 ) {
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
-	val frame by remember { viewModel.frame	}
+	val frame by viewModel.frame.collectAsState()
 	Box(
 		modifier = Modifier
 	){
@@ -114,14 +115,19 @@ private fun EffectsCameraPreview(
 			) {
 				Text(
 					modifier = Modifier,
-					text = "Нет доступа к камере",
+					text = stringResource(R.string.camera_not_ready),
 					color = MaterialTheme.colorScheme.surface,
 					fontSize = 16.sp,
 				)
 			}
 		}
 		else {
-			Image(bitmap = frame.asImageBitmap(), contentDescription = null)
+			Image(
+				bitmap = frame!!.asImageBitmap(),
+				contentDescription = null,
+				contentScale = ContentScale.FillWidth,
+				modifier = Modifier.fillMaxSize()
+			)
 		}
 	}
 }
@@ -253,7 +259,7 @@ private fun BottomBar(
 		) {
 			Text(
 				color = MaterialTheme.colorScheme.surface,
-				text = cameraUiState.filtersMode.color
+				text = stringResource(cameraUiState.filtersMode.description)
 			)
 		}
 		Row(
@@ -328,6 +334,7 @@ fun CaptureButton(
 	) {
 		Canvas(modifier = Modifier.size(110.dp), onDraw = {
 			drawCircle(
+				// TODO [fmv] add changing colors that depend on video recording state
 				color = Color.Transparent
 			)
 		})

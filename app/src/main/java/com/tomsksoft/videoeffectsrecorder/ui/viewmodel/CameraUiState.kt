@@ -1,5 +1,7 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
+import com.tomsksoft.videoeffectsrecorder.R
+
 /**
  * Defines the current state of the CameraScreen
  */
@@ -21,13 +23,13 @@ enum class FlashMode {
 /**
  * Defines current filter mode
  */
-enum class FiltersMode(val color: String) {
-    BLUR("Blur"),
-    REPLACE_BACK("Replace background"),
-    BEAUTIFY("Beautification"),
-    SMART_ZOOM("Smart Zoom"),
-    COLOR_CORRECTION("Color correction"),
-    NONE("No mode")
+enum class FiltersMode(val description: Int) {
+    BLUR(R.string.effects_blur),
+    REPLACE_BACK(R.string.effects_replace_background),
+    BEAUTIFY(R.string.effects_beautify),
+    SMART_ZOOM(R.string.effects_smart_zoom),
+    COLOR_CORRECTION(R.string.effects_color_correction),
+    NONE(R.string.effects_none)
 }
 
 /**
