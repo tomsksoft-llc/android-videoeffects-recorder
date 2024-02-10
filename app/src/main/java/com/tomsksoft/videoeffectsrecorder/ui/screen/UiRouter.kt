@@ -1,5 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -8,6 +9,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -24,15 +26,16 @@ object UiRouter {
 		Scaffold { innerPadding ->
 			NavHost(
 				navController = navController,
-				startDestination = "SplashScreen",
+				startDestination = "CameraScreen",
 				modifier = Modifier
 					.fillMaxSize()
-					.verticalScroll(rememberScrollState())
 					.padding(innerPadding)
 			) {
-				composable(route = "SplashScreen") {
+				composable(route = "CameraScreen") {
 					CameraScreen(
-						viewModel<CameraViewModel>()
+						viewModel<CameraViewModel>(
+							LocalContext.current as ComponentActivity // bind to activity in order to use camera
+						)
 					)
 				}
 			}
