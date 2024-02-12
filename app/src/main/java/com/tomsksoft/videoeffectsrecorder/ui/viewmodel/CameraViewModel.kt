@@ -2,18 +2,24 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.app.Activity
 import android.graphics.Bitmap
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraConfigurerImpl
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.CameraStoreImpl
 import com.tomsksoft.videoeffectsrecorder.data.Frame
-import com.tomsksoft.videoeffectsrecorder.data.VideoRepositoryImpl
+import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraStoreManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraViewManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class CameraViewModel: ViewModel() {
 
@@ -45,7 +51,7 @@ class CameraViewModel: ViewModel() {
     fun initializeCamera(context: Activity) {
         cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
         cameraViewManager = CameraViewManager(camera) { frame.value = it.bitmap }
-        cameraRecordManager = CameraRecordManager(camera, VideoRepositoryImpl())
+        cameraRecordManager = CameraRecordManager(camera, VideoRecorderImpl(context.applicationContext))
         cameraEffectsManager = CameraEffectsManager(
             camera,
             CameraConfig(
@@ -57,6 +63,20 @@ class CameraViewModel: ViewModel() {
             CameraConfigurerImpl()
         )
         camera.isEnabled = true
+        viewModelScope.launch { // TODO [tva] remove record demo
+            delay(10_000)
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Recording...", Toast.LENGTH_SHORT).show()
+            }
+            cameraRecordManager.isRecording = true
+            withContext(Dispatchers.IO) {
+                delay(10_000)
+            }
+            cameraRecordManager.isRecording = false
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun changeFlashMode() {

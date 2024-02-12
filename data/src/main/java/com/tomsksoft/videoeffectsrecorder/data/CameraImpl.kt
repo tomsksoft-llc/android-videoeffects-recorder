@@ -4,6 +4,7 @@ import android.app.Activity
 import android.util.Log
 import com.effectssdk.tsvb.EffectsSDK
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.OnFrameListener
 
 class CameraImpl(
     context: Activity,
@@ -20,7 +21,7 @@ class CameraImpl(
         .setCamera(camera)
         .build()
 
-    private val subscribers = ArrayList<Camera.OnFrameListener<Frame>>()
+    private val subscribers = ArrayList<OnFrameListener<Frame>>()
 
     override var isEnabled: Boolean = false
         set(value) {
@@ -29,11 +30,11 @@ class CameraImpl(
             field = value
         }
 
-    override fun subscribe(listener: Camera.OnFrameListener<Frame>) {
+    override fun subscribe(listener: OnFrameListener<Frame>) {
         subscribers += listener
     }
 
-    override fun unsubscribe(listener: Camera.OnFrameListener<Frame>) {
+    override fun unsubscribe(listener: OnFrameListener<Frame>) {
         subscribers -= listener
     }
 

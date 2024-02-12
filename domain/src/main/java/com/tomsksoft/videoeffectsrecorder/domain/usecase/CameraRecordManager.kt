@@ -1,17 +1,22 @@
 package com.tomsksoft.videoeffectsrecorder.domain.usecase
 
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
-import com.tomsksoft.videoeffectsrecorder.domain.VideoRepository
+import com.tomsksoft.videoeffectsrecorder.domain.OnFrameListener
+import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
 
 class CameraRecordManager<T: Camera<F>, F>(
     camera: T,
-    private val videoRepository: VideoRepository<F>
-): Camera.OnFrameListener<F> by videoRepository {
+    private val videoRecorder: VideoRecorder<F>
+): OnFrameListener<F> by videoRecorder {
 
-    private var record: VideoRepository.Record<F>? = null
+    private var record: VideoRecorder.Record<F>? = null
 
-    val isRecording: Boolean
-        get() = record != null
+    var isRecording: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value) startRecord() else stopRecord()
+        }
 
     var camera: T = camera
         set(value) {
@@ -22,16 +27,12 @@ class CameraRecordManager<T: Camera<F>, F>(
             field = value
         }
 
-    fun startRecord() {
-        if (isRecording)
-            throw IllegalStateException("Couldn't start record: Video is already recording")
+    private fun startRecord() {
         camera.subscribe(this)
-        videoRepository.startRecord()
+        record = videoRecorder.startRecord()
     }
 
-    fun stopRecording() {
-        if (!isRecording)
-            throw IllegalStateException("Couldn't stop record: Video isn't recording")
+    private fun stopRecord() {
         record!!.close()
         camera.unsubscribe(this)
     }
