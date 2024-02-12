@@ -32,11 +32,7 @@ object UiRouter {
 					.padding(innerPadding)
 			) {
 				composable(route = "CameraScreen") {
-					CameraScreen(
-						viewModel<CameraViewModel>(
-							LocalContext.current as ComponentActivity // bind to activity in order to use camera
-						)
-					)
+					CameraScreen()
 				}
 			}
 		}
