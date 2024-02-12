@@ -14,11 +14,22 @@ import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraStoreManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraViewManager
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
-class CameraViewModel: ViewModel() {
+class CameraViewModel : ViewModel() {
 
-    val flashMode = MutableStateFlow(FlashMode.AUTO)
-    val frame = MutableStateFlow<Bitmap?>(null)
+    private val _cameraUiState : MutableStateFlow<CameraUiState>
+            = MutableStateFlow(CameraUiState(
+        flashMode = FlashMode.AUTO,
+        expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
+        filtersMode = FiltersMode.NONE)
+    )
+    val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
+
+    private val _frame = MutableStateFlow<Bitmap?>(null)
+    val frame: StateFlow<Bitmap?> = _frame.asStateFlow()
 
     private lateinit var cameraStoreManager: CameraStoreManager<CameraImpl>
     private lateinit var cameraViewManager: CameraViewManager<CameraImpl, Frame>
@@ -44,7 +55,7 @@ class CameraViewModel: ViewModel() {
 
     fun initializeCamera(context: Activity) {
         cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
-        cameraViewManager = CameraViewManager(camera) { frame.value = it.bitmap }
+        cameraViewManager = CameraViewManager(camera) { _frame.value = it.bitmap }
         cameraRecordManager = CameraRecordManager(camera, VideoRepositoryImpl())
         cameraEffectsManager = CameraEffectsManager(
             camera,
@@ -59,18 +70,78 @@ class CameraViewModel: ViewModel() {
         camera.isEnabled = true
     }
 
-    fun changeFlashMode() {
-        val values = FlashMode.values()
-        flashMode.value = values[(values.indexOf(flashMode.value) + 1) % values.size] // next mode
+    fun setFlash(flashMode: FlashMode) {
+        _cameraUiState.update{cameraUiState ->
+            cameraUiState.copy(
+                flashMode = flashMode
+            )
+        }
+        // TODO [fmv]: add usecase interaction
     }
 
-    fun switchCamera() {
-        cameraIndex = (cameraIndex + 1) % cameraStoreManager.camerasCount
+    fun setFilters(filtersMode: FiltersMode) {
+        _cameraUiState.update {cameraUiState ->
+            cameraUiState.copy(
+                filtersMode = filtersMode
+            )
+        }
+
+        var backgroundMode : CameraConfig.BackgroundMode = CameraConfig.BackgroundMode.Regular
+        var smartZoom : CameraConfig.SmartZoom? = null
+        var beautification : CameraConfig.Beautification? = null
+        var colorCorrection : CameraConfig.ColorCorrection = CameraConfig.ColorCorrection.NO_FILTER
+
+        when (filtersMode) {
+            FiltersMode.BLUR -> {
+                backgroundMode = CameraConfig.BackgroundMode.Blur(0.5)  // TODO [fmv] add appropriate way to change blur power
+            }
+            FiltersMode.REPLACE_BACK -> {
+                backgroundMode = CameraConfig.BackgroundMode.Replace()
+            }
+            FiltersMode.BEAUTIFY -> {
+                beautification = CameraConfig.Beautification(30) // TODO [fmv] add appropriate way to change beautification power
+            }
+            FiltersMode.SMART_ZOOM -> {
+                smartZoom = CameraConfig.SmartZoom(20) // TODO [fmv] add appropriate way to change face size
+            }
+            FiltersMode.COLOR_CORRECTION -> {
+                colorCorrection = CameraConfig.ColorCorrection.COLOR_CORRECTION
+            }
+            FiltersMode.NONE -> {}
+        }
+
+        cameraEffectsManager.config = CameraConfig(
+            backgroundMode = backgroundMode,
+            smartZoom = smartZoom,
+            beautification = beautification,
+            colorCorrection = colorCorrection
+        )
+
     }
 
-    enum class FlashMode {
-        AUTO,
-        ON,
-        OFF
+
+    fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode){
+        _cameraUiState.update {cameraUiState ->
+            cameraUiState.copy(
+                expandedTopBarMode = expandedTopBarMode
+            )
+        }
+
+    }
+
+    fun flipCamera(){
+            cameraIndex = (cameraIndex + 1) % cameraStoreManager.camerasCount
+    }
+
+    fun captureImage(){
+        // TODO: [fmv] add usecase interaction
+    }
+
+    fun startVideoRecording(){
+        // TODO: [fmv] add state change and usecase interaction
+    }
+
+    fun stopVideoRecording() {
+        // TODO: [fmv] add state change and usecase interaction
     }
 }
