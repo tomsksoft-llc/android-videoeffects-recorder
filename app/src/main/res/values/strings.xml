@@ -1,3 +1,10 @@
 <resources>
 	<string name = "app_name">Video Effects Recorder</string>
+	<string name="camera_not_ready"> Camera is not ready</string>
+	<string name="effects_blur">Blur</string>
+	<string name="effects_replace_background">Replace background</string>
+	<string name="effects_beautify">Beautification</string>
+	<string name="effects_smart_zoom">Smart Zoom</string>
+	<string name="effects_color_correction">Color Correction</string>
+	<string name="effects_none">None</string>
 </resources>
