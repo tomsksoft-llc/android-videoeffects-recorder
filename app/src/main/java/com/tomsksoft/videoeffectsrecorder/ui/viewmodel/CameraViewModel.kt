@@ -44,16 +44,17 @@ class CameraViewModel: ViewModel() {
             if (field == value) return
             camera.isEnabled = false
             field = value
+            camera = selectCamera()
             camera.isEnabled = true
             cameraViewManager.camera = camera
             cameraRecordManager.camera = camera
             cameraEffectsManager.camera = camera
         }
-    private val camera: CameraImpl
-        get() = cameraStoreManager.cameras[cameraIndex]
+    private lateinit var camera: CameraImpl
 
     fun initializeCamera(context: Activity) {
         cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
+        camera = selectCamera()
         cameraViewManager = CameraViewManager(camera) { _frame.value = it.bitmap }
         cameraRecordManager = CameraRecordManager(camera, VideoRecorderImpl(context.applicationContext))
         cameraEffectsManager = CameraEffectsManager(
@@ -142,4 +143,6 @@ class CameraViewModel: ViewModel() {
     fun stopVideoRecording() {
         // TODO: [fmv] add state change and usecase interaction
     }
+
+    private fun selectCamera() = cameraStoreManager.cameras[cameraIndex].copy()
 }
