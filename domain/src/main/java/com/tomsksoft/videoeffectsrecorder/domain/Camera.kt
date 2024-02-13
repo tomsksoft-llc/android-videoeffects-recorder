@@ -8,7 +8,5 @@ interface Camera<F> {
 
     fun unsubscribe(listener: OnFrameListener<F>)
 
-    fun interface OnFrameListener<F> {
-        fun onFrame(frame: F)
-    }
+    fun configure(config: CameraConfig)
 }

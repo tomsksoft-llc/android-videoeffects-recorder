@@ -9,3 +9,4 @@ data class CameraUiState(
     val filtersMode: FiltersMode,
     val isVideoRecording: Boolean,
 )
+
