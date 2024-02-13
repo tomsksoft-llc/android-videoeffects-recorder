@@ -19,16 +19,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,7 +50,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.tomsksoft.videoeffectsrecorder.R
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
@@ -53,15 +60,18 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ExpandedTopBarMode
 @Preview(widthDp = 450, heightDp = 800, showBackground = true)
 @Composable
 fun CameraScreen(
-	@PreviewParameter(CameraViewModelProvider::class) viewModel: CameraViewModel
+	@PreviewParameter(CameraViewModelProvider::class) viewModel: CameraViewModel,
 ) {
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 	val frame by viewModel.frame.collectAsState()
+
+	val snackbarHostState = remember { SnackbarHostState() }
+
 	Box(
 		modifier = Modifier
 	){
 		// effects sdk camera feed; stays behind all other elements
-		EffectsCameraPreview(frame)
+		EffectsCameraPreview(frame, snackbarHostState)
 
 		// elements of ui on top of the camera feed
 		Column(
@@ -77,6 +87,12 @@ fun CameraScreen(
 				viewModel::setFlash,
 				viewModel::setFilters,
 			)
+			Box(modifier = Modifier.weight(1f)){
+				CameraSnackbar(
+					snackbarHostState = snackbarHostState,
+					modifier = Modifier.align(Alignment.BottomCenter)
+				)
+			}
 			BottomBar(
 				cameraUiState,
 				viewModel::flipCamera,
@@ -101,7 +117,8 @@ private fun ImageButton(painter: Painter, onClick: () -> Unit) {
 
 @Composable
 private fun EffectsCameraPreview(
-	frame: Bitmap?
+	frame: Bitmap?,
+	snackbarHostState: SnackbarHostState
 ){
 	Box(
 		contentAlignment = Alignment.Center,
@@ -109,15 +126,18 @@ private fun EffectsCameraPreview(
 			.fillMaxSize()
 			.background(MaterialTheme.colorScheme.onSurface),
 	){
+
 		if (frame == null){
+			val snackbarMessage = stringResource(id = R.string.camera_not_ready)
+			LaunchedEffect(snackbarHostState){
+				snackbarHostState.showSnackbar(snackbarMessage)
+			}
 			Column(
 				horizontalAlignment = Alignment.CenterHorizontally,
 			) {
-				Text(
-					modifier = Modifier,
-					text = stringResource(R.string.camera_not_ready),
+				CircularProgressIndicator(
+					modifier = Modifier.width(64.dp),
 					color = MaterialTheme.colorScheme.surface,
-					fontSize = 16.sp,
 				)
 			}
 		}
@@ -284,7 +304,8 @@ private fun BottomBar(
 					.weight(1f),
 				onClick = onCaptureClick,
 				onLongPress = onLongPress,
-				onRelease = onRelease
+				onRelease = onRelease,
+				isVideoRecording = cameraUiState.isVideoRecording
 			)
 
 			// segment right of capture button
@@ -307,7 +328,8 @@ private fun BottomBar(
 }
 
 @Composable
-fun CaptureButton(
+private fun CaptureButton(
+	isVideoRecording: Boolean,
 	modifier: Modifier = Modifier,
 	onClick: () -> Unit,
 	onLongPress: () -> Unit,
@@ -334,8 +356,7 @@ fun CaptureButton(
 	) {
 		Canvas(modifier = Modifier.size(110.dp), onDraw = {
 			drawCircle(
-				// TODO [fmv] add changing colors that depend on video recording state
-				color = Color.Transparent
+				color = if (isVideoRecording) Color.Red else Color.Transparent
 			)
 		})
 	}
@@ -356,6 +377,32 @@ private fun FlipCameraButton(
 			modifier = Modifier.size(72.dp)
 		)
 	}
+}
+
+/**
+ * Snackbar for this screen
+ */
+@Composable
+private fun CameraSnackbar(
+	snackbarHostState: SnackbarHostState,
+	modifier: Modifier = Modifier,
+){
+	SnackbarHost(
+		hostState = snackbarHostState,
+		snackbar = { data ->
+			Snackbar(
+				modifier = Modifier
+					.padding(10.dp),
+				content = {
+					Text(
+						text = data.visuals.message,
+					)
+				},
+			)
+		},
+		modifier = modifier
+			.wrapContentHeight(Alignment.Bottom)
+	)
 }
 
 class CameraViewModelProvider: PreviewParameterProvider<CameraViewModel> {

@@ -24,7 +24,8 @@ class CameraViewModel : ViewModel() {
             = MutableStateFlow(CameraUiState(
         flashMode = FlashMode.AUTO,
         expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
-        filtersMode = FiltersMode.NONE)
+        filtersMode = FiltersMode.NONE,
+        isVideoRecording = false,)
     )
     val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 

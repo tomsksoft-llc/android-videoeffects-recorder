@@ -9,7 +9,6 @@ class VideoEffectsRecorderApplication : Application() {
 
 	override fun onCreate() {
 		super.onCreate()
-		forceLightTheme()
 	}
 
 	private fun forceLightTheme() {
