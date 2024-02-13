@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rxjava3.subscribeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -63,7 +64,7 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FlashMode
 fun CameraScreen() {
 	val activity = LocalContext.current as ComponentActivity
 	val viewModel = viewModel<CameraViewModel>()
-	val frame by viewModel.frame.collectAsState()
+	val frame by viewModel.frame.subscribeAsState(null)
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 
 	val permissions = rememberMultiplePermissionsState(

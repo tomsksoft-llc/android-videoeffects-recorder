@@ -1,15 +1,25 @@
 package com.tomsksoft.videoeffectsrecorder.domain.usecase
 
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
-import com.tomsksoft.videoeffectsrecorder.domain.OnFrameListener
+import com.tomsksoft.videoeffectsrecorder.domain.FrameProvider
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
+import io.reactivex.rxjava3.core.Observable
 
-class CameraRecordManager<T: Camera<F>, F>(
+class CameraRecordManager<T: Camera<F>, F: Any>(
     camera: T,
     private val videoRecorder: VideoRecorder<F>
-): OnFrameListener<F> by videoRecorder {
+): FrameProvider<F> {
 
-    private var record: VideoRecorder.Record<F>? = null
+    private var record: VideoRecorder.Record? = null
+
+    var camera: T = camera
+        set(value) {
+            field = value
+            camera.frame.subscribe(videoRecorder.frame) // TODO [tva] unsubscribe
+        }
+
+    override val frame: Observable<F>
+        get() = camera.frame
 
     var isRecording: Boolean = false
         set(value) {
@@ -18,22 +28,11 @@ class CameraRecordManager<T: Camera<F>, F>(
             if (value) startRecord() else stopRecord()
         }
 
-    var camera: T = camera
-        set(value) {
-            if (isRecording) {
-                field.unsubscribe(this)
-                value.subscribe(this)
-            }
-            field = value
-        }
-
     private fun startRecord() {
-        camera.subscribe(this)
         record = videoRecorder.startRecord()
     }
 
     private fun stopRecord() {
         record!!.close()
-        camera.unsubscribe(this)
     }
 }

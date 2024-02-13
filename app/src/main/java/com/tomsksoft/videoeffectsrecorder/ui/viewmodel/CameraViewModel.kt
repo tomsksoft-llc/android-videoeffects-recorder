@@ -11,7 +11,9 @@ import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraStoreManager
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraViewManager
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,11 +29,12 @@ class CameraViewModel: ViewModel() {
     )
     val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
-    private val _frame = MutableStateFlow<Bitmap?>(null)
-    val frame: StateFlow<Bitmap?> = _frame.asStateFlow()
+    private val _frame = BehaviorSubject.create<Frame>()
+    val frame: Observable<Bitmap> = _frame
+        .map(Frame::bitmap)
+        .observeOn(AndroidSchedulers.mainThread())
 
     private lateinit var cameraStoreManager: CameraStoreManager<CameraImpl>
-    private lateinit var cameraViewManager: CameraViewManager<CameraImpl, Frame>
     private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame>
     private lateinit var cameraEffectsManager: CameraEffectsManager<CameraImpl>
 
@@ -46,7 +49,7 @@ class CameraViewModel: ViewModel() {
             field = value
             camera = selectCamera()
             camera.isEnabled = true
-            cameraViewManager.camera = camera
+            camera.frame.subscribe(_frame)
             cameraRecordManager.camera = camera
             cameraEffectsManager.camera = camera
         }
@@ -55,7 +58,6 @@ class CameraViewModel: ViewModel() {
     fun initializeCamera(context: Activity) {
         cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
         camera = selectCamera()
-        cameraViewManager = CameraViewManager(camera) { _frame.value = it.bitmap }
         cameraRecordManager = CameraRecordManager(camera, VideoRecorderImpl(context.applicationContext))
         cameraEffectsManager = CameraEffectsManager(
             camera,
@@ -67,6 +69,7 @@ class CameraViewModel: ViewModel() {
             )
         )
         camera.isEnabled = true
+        camera.frame.subscribe(_frame)
     }
 
     fun setFlash(flashMode: FlashMode) {
