@@ -3,6 +3,7 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 import android.app.Activity
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.CameraStoreImpl
 import com.tomsksoft.videoeffectsrecorder.data.Frame
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class CameraViewModel: ViewModel() {
 
@@ -138,11 +140,25 @@ class CameraViewModel: ViewModel() {
     }
 
     fun startVideoRecording(){
-        // TODO: [fmv] add state change and usecase interaction
+        viewModelScope.launch{
+            _cameraUiState.update {cameraUiState ->
+                cameraUiState.copy(
+                    isVideoRecording = true
+                )
+            }
+            cameraRecordManager.isRecording = true
+        }
     }
 
     fun stopVideoRecording() {
-        // TODO: [fmv] add state change and usecase interaction
+        viewModelScope.launch{
+            _cameraUiState.update {cameraUiState ->
+                cameraUiState.copy(
+                    isVideoRecording = false
+                )
+            }
+            cameraRecordManager.isRecording = false
+        }
     }
 
     private fun selectCamera() = cameraStoreManager.cameras[cameraIndex].copy()

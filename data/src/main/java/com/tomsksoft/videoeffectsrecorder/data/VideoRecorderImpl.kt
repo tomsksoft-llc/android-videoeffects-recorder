@@ -5,6 +5,7 @@ import android.graphics.Rect
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.Environment
+import android.util.Log
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
 import java.io.File
@@ -41,11 +42,19 @@ class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
             val (width, height) = frame.bitmap.width to frame.bitmap.height
             if (surface == null) // first frame setups MediaRecorder with appropriate video size
                 start(width, height)
-            val canvas = surface!!.lockCanvas(
-                Rect(0, 0, width, height)
-            ) ?: return
-            canvas.drawBitmap(frame.bitmap, 0f, 0f, null)
-            surface!!.unlockCanvasAndPost(canvas)
+
+            // ---> exception handling necessary for code with jni function calls (it would crash at runtime on my device)
+            try {
+                val canvas = surface!!.lockCanvas(
+                    Rect(0, 0, width, height)
+                ) ?: return
+                canvas.drawBitmap(frame.bitmap, 0f, 0f, null)
+                surface!!.unlockCanvasAndPost(canvas)
+            } catch (e: Exception) {
+                Log.e("RecordImpl", "$e")
+            }
+            // <--- exception handling necessary for code with jni function calls (it would crash at runtime on my device)
+
         }
 
         override fun close() {

@@ -52,10 +52,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -122,11 +120,11 @@ fun CameraScreen() {
 				)
 			}
 			BottomBar(
-				cameraUiState,
-				viewModel::flipCamera,
-				viewModel::captureImage,
-				viewModel::startVideoRecording,
-				viewModel::stopVideoRecording
+				cameraUiState = cameraUiState,
+				onFlipCameraClick = viewModel::flipCamera,
+				onCaptureClick = viewModel::captureImage,
+				onLongPress = viewModel::startVideoRecording,
+				onRelease = viewModel::stopVideoRecording
 			)
 		}
 	}
