@@ -4,11 +4,10 @@ import android.content.Context
 import android.graphics.Rect
 import android.media.MediaRecorder
 import android.os.Build
-import android.os.Environment
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
-import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import io.reactivex.rxjava3.subjects.Subject
 import java.io.File
@@ -16,17 +15,13 @@ import java.io.File
 class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
     companion object {
         const val FPS = 30
-        val DEBUG_FILE = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-            "effects.mp4" // TODO [tva] get free name for file
-        )
     }
 
     override val frame: Subject<Frame> = BehaviorSubject.create()
 
-    override fun startRecord(): VideoRecorder.Record = RecordImpl()
+    override fun startRecord(outputFile: File): VideoRecorder.Record = RecordImpl(outputFile)
 
-    private inner class RecordImpl: VideoRecorder.Record {
+    private inner class RecordImpl(private val outputFile: File): VideoRecorder.Record {
 
         private val mediaRecorder = (
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
@@ -34,11 +29,12 @@ class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
                 else
                     MediaRecorder(context)
             )
+        @Volatile
         private var surface: Surface? = null
         private var disposable: Disposable? = null
 
         init {
-            disposable = frame.subscribe { frame ->
+            disposable = frame.observeOn(Schedulers.io()).subscribe { frame ->
                 val (width, height) = frame.bitmap.width to frame.bitmap.height
                 if (surface == null) // first frame setups MediaRecorder with appropriate video size
                     start(width, height)
@@ -68,7 +64,7 @@ class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
 
                 setVideoFrameRate(FPS) // use also setCaptureRate() for time lapse
                 setVideoSize(width, height)
-                setOutputFile(DEBUG_FILE)
+                setOutputFile(outputFile)
 
                 prepare()
                 start()

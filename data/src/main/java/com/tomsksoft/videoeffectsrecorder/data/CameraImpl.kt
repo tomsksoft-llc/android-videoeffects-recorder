@@ -82,6 +82,5 @@ class CameraImpl(
      */
     private fun release() {
         pipeline.release()
-        _frame.onComplete()
     }
 }
