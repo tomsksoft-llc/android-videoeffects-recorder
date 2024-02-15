@@ -26,7 +26,8 @@ class CameraViewModel: ViewModel() {
         flashMode = FlashMode.AUTO,
         expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
         filtersMode = FiltersMode.NONE,
-        isVideoRecording = false,)
+        isVideoRecording = false,
+        isCameraInitialized = false,)
     )
     val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
@@ -70,6 +71,12 @@ class CameraViewModel: ViewModel() {
             )
         )
         camera.isEnabled = true
+
+        _cameraUiState.update {cameraUiState ->
+            cameraUiState.copy(
+                isCameraInitialized = true
+            )
+        }
     }
 
     fun setFlash(flashMode: FlashMode) {
@@ -98,7 +105,7 @@ class CameraViewModel: ViewModel() {
                 backgroundMode = CameraConfig.BackgroundMode.Blur(0.5)  // TODO [fmv] add appropriate way to change blur power
             }
             FiltersMode.REPLACE_BACK -> {
-                backgroundMode = CameraConfig.BackgroundMode.Replace()
+                //backgroundMode = CameraConfig.BackgroundMode.Replace() // waiting for useacase implementation
             }
             FiltersMode.BEAUTIFY -> {
                 beautification = CameraConfig.Beautification(30) // TODO [fmv] add appropriate way to change beautification power

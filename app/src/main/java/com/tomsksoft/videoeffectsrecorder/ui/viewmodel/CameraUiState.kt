@@ -8,5 +8,6 @@ data class CameraUiState(
     val expandedTopBarMode: ExpandedTopBarMode,
     val filtersMode: FiltersMode,
     val isVideoRecording: Boolean,
+    val isCameraInitialized: Boolean
 )
 

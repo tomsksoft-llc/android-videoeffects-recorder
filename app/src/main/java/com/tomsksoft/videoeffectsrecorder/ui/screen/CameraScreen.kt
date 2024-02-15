@@ -6,6 +6,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +26,9 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -35,12 +40,12 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,6 +58,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -95,37 +101,52 @@ fun CameraScreen() {
 	}
 	LaunchedEffect(Unit) { permissions.launchMultiplePermissionRequest() }
 
-	Box {
-		// effects sdk camera feed; stays behind all other elements
-		EffectsCameraPreview(frame, snackbarHostState)
-
-		// elements of ui on top of the camera feed
+	if(!cameraUiState.isCameraInitialized){
 		Column(
 			modifier = Modifier
-				.fillMaxHeight()
-				.fillMaxWidth(),
-			verticalArrangement = Arrangement.SpaceBetween,
+				.fillMaxSize()
+				.background(Color.Black),
+			verticalArrangement = Arrangement.Center,
+			horizontalAlignment = Alignment.CenterHorizontally
 		) {
+			CircularProgressIndicator(modifier = Modifier.size(50.dp))
+			Text(text = stringResource(R.string.camera_not_ready), color = Color.White)
+		}
+	}
+	else {
+		Box {
+			// effects sdk camera feed; stays behind all other elements
+			EffectsCameraPreview(frame, snackbarHostState)
 
-			TopBar(
-				cameraUiState,
-				viewModel::toggleQuickSettingsIndicator,
-				viewModel::setFlash,
-				viewModel::setFilters,
-			)
-			Box(modifier = Modifier.weight(1f)){
-				CameraSnackbar(
-					snackbarHostState = snackbarHostState,
-					modifier = Modifier.align(Alignment.BottomCenter)
+			// elements of ui on top of the camera feed
+			Column(
+				modifier = Modifier
+					.fillMaxHeight()
+					.fillMaxWidth(),
+				verticalArrangement = Arrangement.SpaceBetween,
+			) {
+
+				TopBar(
+					cameraUiState,
+					viewModel::toggleQuickSettingsIndicator,
+					viewModel::setFlash,
+					viewModel::setFilters,
+				)
+				Box(modifier = Modifier.weight(1f)) {
+					CameraSnackbar(
+						snackbarHostState = snackbarHostState,
+						modifier = Modifier.align(Alignment.BottomCenter)
+					)
+				}
+				BottomBar(
+					cameraUiState = cameraUiState,
+					onFlipCameraClick = viewModel::flipCamera,
+					onCaptureClick = viewModel::captureImage,
+					onLongPress = viewModel::startVideoRecording,
+					onRelease = viewModel::stopVideoRecording,
+					onFilterSettingClick = viewModel::setFilters
 				)
 			}
-			BottomBar(
-				cameraUiState = cameraUiState,
-				onFlipCameraClick = viewModel::flipCamera,
-				onCaptureClick = viewModel::captureImage,
-				onLongPress = viewModel::startVideoRecording,
-				onRelease = viewModel::stopVideoRecording
-			)
 		}
 	}
 }
@@ -288,17 +309,19 @@ private fun TopBar(
 	}
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BottomBar(
 	cameraUiState: CameraUiState,
 	onFlipCameraClick: () -> Unit,
 	onCaptureClick: () -> Unit,
 	onLongPress: () -> Unit,
-	onRelease: () -> Unit
+	onRelease: () -> Unit,
+	onFilterSettingClick: (FiltersMode) -> Unit
 ) {
 	// 3-segmented row to keep camera button always centered
 	Column {
-		Row(
+		/*Row(
 			horizontalArrangement = Arrangement.Center,
 			modifier = Modifier
 				.fillMaxWidth()
@@ -308,6 +331,19 @@ private fun BottomBar(
 				text = stringResource(cameraUiState.filtersMode.description)
 			)
 		}
+		*/
+/*		val pagerState = rememberPagerState(pageCount = {10})
+		HorizontalPager(pagerState) {page ->
+			Text(
+				text = "Page: $page",
+				//modifier = Modifier.fillMaxWidth()
+			)
+		}*/
+		FiltersPager(
+			//filtersMode = cameraUiState.filtersMode,
+			//modifier = Modifier.align(Alignment.CenterHorizontally)
+			onFilterSettingClick
+		)
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
@@ -429,6 +465,49 @@ private fun CameraSnackbar(
 		modifier = modifier
 			.wrapContentHeight(Alignment.Bottom)
 	)
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FiltersPager(
+	onPageChange: (FiltersMode) -> Unit
+){
+	val pagerState = rememberPagerState(
+		pageCount = {FiltersMode.values().size},
+		initialPage = 6
+	)
+
+	LaunchedEffect(pagerState) {
+		snapshotFlow { pagerState.currentPage }.collect { page ->
+			onPageChange(FiltersMode.values()[page])
+		}
+	}
+
+	HorizontalPager(
+		state = pagerState,
+/*		pageSize = object : PageSize{
+			// defining
+			override fun Density.calculateMainAxisPageSize(availableSpace: Int, pageSpacing: Int): Int {
+				return ((availableSpace - 2 * pageSpacing) * 0.5f).toInt()
+			}
+		},*/
+		//pageSize = PageSize.Fixed(120.dp),
+		contentPadding = PaddingValues(start = 170.dp, end = 100.dp),
+		modifier = Modifier,
+		pageSpacing = 10.dp,
+
+		//contentPadding = PaddingValues(horizontal = 50.dp),
+		key = {FiltersMode.values()[it]}
+		) {index ->
+
+		FiltersMode.values()[index].description.let { content ->
+			Box {
+				Text(
+					text = stringResource(id = content)
+				)
+			}
+		}
+	}
 }
 
 class CameraViewModelProvider: PreviewParameterProvider<CameraViewModel> {
