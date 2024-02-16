@@ -1,5 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.domain.usecase
 
+import android.util.Log
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.FrameProvider
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
@@ -13,6 +14,7 @@ class CameraRecordManager<T: Camera<F>, F: Any>(
     companion object {
         const val BASE_NAME = "effects"
         const val EXTENSION = "mp4"
+        const val MIME_TYPE = "video/mp4"
     }
 
     private var record: VideoRecorder.Record? = null
@@ -20,13 +22,17 @@ class CameraRecordManager<T: Camera<F>, F: Any>(
     var camera: T = camera
         set(value) {
             field = value
-            camera.frame.subscribe(videoRecorder.frame)
+            frame.subscribe(videoRecorder.frame)
+            degree.subscribe(videoRecorder.degree)
         }
 
     init { this.camera = camera } // invoke setter to subscribe
 
     override val frame: Observable<F>
         get() = camera.frame
+
+    override val degree: Observable<Int>
+        get() = camera.degree
 
     var isRecording: Boolean = false
         set(value) {
@@ -36,7 +42,8 @@ class CameraRecordManager<T: Camera<F>, F: Any>(
         }
 
     private fun startRecord() {
-        record = videoRecorder.startRecord(fileManager.create(BASE_NAME, EXTENSION))
+        val fileDescriptor = fileManager.create(BASE_NAME, EXTENSION, MIME_TYPE)
+        record = videoRecorder.startRecord(fileDescriptor)
     }
 
     private fun stopRecord() {

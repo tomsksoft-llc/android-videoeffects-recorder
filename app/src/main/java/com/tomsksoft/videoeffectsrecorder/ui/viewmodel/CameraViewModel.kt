@@ -7,7 +7,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.CameraStoreImpl
-import com.tomsksoft.videoeffectsrecorder.data.FileStoreImpl
+import com.tomsksoft.videoeffectsrecorder.data.VideoStore
 import com.tomsksoft.videoeffectsrecorder.data.Frame
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
@@ -26,7 +26,7 @@ import java.io.File
 
 class CameraViewModel: ViewModel() {
     companion object {
-        const val RECORDS_DIRECTORY = "Video Effects Recorder"
+        const val RECORDS_DIRECTORY = "Effects"
     }
 
     private val _cameraUiState : MutableStateFlow<CameraUiState>
@@ -71,7 +71,7 @@ class CameraViewModel: ViewModel() {
         camera = selectCamera()
         cameraRecordManager = CameraRecordManager(
             camera,
-            FileManager(FileStoreImpl(recordsDir)),
+            FileManager(VideoStore(recordsDir)),
             VideoRecorderImpl(context.applicationContext)
         )
         cameraEffectsManager = CameraEffectsManager(

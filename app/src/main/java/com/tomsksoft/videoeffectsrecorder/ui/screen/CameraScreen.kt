@@ -71,7 +71,7 @@ fun CameraScreen() {
 		permissions = mutableListOf(
 			Manifest.permission.CAMERA,
 			Manifest.permission.RECORD_AUDIO
-		).also { permissions ->
+		).also { permissions -> // TODO [tva] check for 13 Android
 			// up to Android 12 inclusive (32 API)
 			if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2)
 				permissions.addAll(listOf(

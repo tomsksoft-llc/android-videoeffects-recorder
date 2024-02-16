@@ -22,8 +22,13 @@ class CameraImpl(
     private val pipeline = pipelineBuilder.build()
     private val _frame = BehaviorSubject.create<Frame>()
         .toSerialized() // serialize to call from different threads
+    private val _degree = BehaviorSubject.create<Int>()
+        .toSerialized()
+
     override val frame: Observable<Frame>
         get() = _frame.observeOn(Schedulers.io())
+    override val degree: Observable<Int>
+        get() = _degree.observeOn(Schedulers.io())
 
     override var isEnabled: Boolean = false
         set(value) {
@@ -72,9 +77,7 @@ class CameraImpl(
     private fun start() {
         pipeline.startPipeline()
         pipeline.setOnFrameAvailableListener { bitmap -> _frame.onNext(Frame(bitmap)) }
-        pipeline.setOrientationChangeListener { orientation, rotation ->
-            Log.d("Camera", "$orientation $rotation") // TODO [tva] notify UI to rotate icons
-        }
+        pipeline.setOrientationChangeListener { _, rotation -> _degree.onNext(rotation) }
     }
 
     /**

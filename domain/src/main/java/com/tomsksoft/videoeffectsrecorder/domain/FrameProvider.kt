@@ -4,4 +4,5 @@ import io.reactivex.rxjava3.core.Observable
 
 interface FrameProvider<F: Any> {
     val frame: Observable<F>
+    val degree: Observable<Int>
 }
