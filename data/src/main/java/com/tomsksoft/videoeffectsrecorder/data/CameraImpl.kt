@@ -3,13 +3,14 @@ package com.tomsksoft.videoeffectsrecorder.data
 import android.app.Activity
 import android.util.Log
 import com.effectssdk.tsvb.EffectsSDK
-import com.effectssdk.tsvb.pipeline.CameraPipeline
 import com.effectssdk.tsvb.pipeline.CameraPipelineImpl
 import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
 import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.OnFrameListener
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.schedulers.Schedulers
+import io.reactivex.rxjava3.subjects.BehaviorSubject
 
 class CameraImpl(
     private val pipelineBuilder: CameraPipelineImpl.Builder
@@ -19,14 +20,15 @@ class CameraImpl(
     }
 
     private val pipeline = pipelineBuilder.build()
+    private val _frame = BehaviorSubject.create<Frame>()
+        .toSerialized() // serialize to call from different threads
+    private val _degree = BehaviorSubject.create<Int>()
+        .toSerialized()
 
-    private val subscribers = ArrayList<OnFrameListener<Frame>>()
-
-    constructor(context: Activity, camera: com.effectssdk.tsvb.Camera): this(
-        factory.createCameraPipelineBuilder()
-            .setContext(context)
-            .setCamera(camera)
-    )
+    override val frame: Observable<Frame>
+        get() = _frame.observeOn(Schedulers.io())
+    override val degree: Observable<Int>
+        get() = _degree.observeOn(Schedulers.io())
 
     override var isEnabled: Boolean = false
         set(value) {
@@ -35,19 +37,17 @@ class CameraImpl(
             field = value
         }
 
-    override fun subscribe(listener: OnFrameListener<Frame>) {
-        subscribers += listener
-    }
-
-    override fun unsubscribe(listener: OnFrameListener<Frame>) {
-        subscribers -= listener
-    }
+    constructor(context: Activity, camera: com.effectssdk.tsvb.Camera): this(
+        factory.createCameraPipelineBuilder()
+            .setContext(context)
+            .setCamera(camera)
+    )
 
     override fun configure(config: CameraConfig) = pipeline.run {
         /* Background Mode */
         when (config.backgroundMode) {
-            is CameraConfig.BackgroundMode.Regular -> setMode(PipelineMode.NO_EFFECT)
-            is CameraConfig.BackgroundMode.Replace -> TODO("[tva] background replace mode")
+            is CameraConfig.BackgroundMode.Regular,
+            is CameraConfig.BackgroundMode.Replace -> setMode(PipelineMode.NO_EFFECT) // TODO [tva] background replace mode
             is CameraConfig.BackgroundMode.Blur -> {
                 setMode(PipelineMode.BLUR)
                 setBlurPower((config.backgroundMode as CameraConfig.BackgroundMode.Blur).power)
@@ -76,12 +76,8 @@ class CameraImpl(
 
     private fun start() {
         pipeline.startPipeline()
-        pipeline.setOnFrameAvailableListener { bitmap ->
-            subscribers.forEach { it.onFrame(Frame(bitmap)) }
-        }
-        pipeline.setOrientationChangeListener { orientation, rotation ->
-            Log.d("Camera", "$orientation $rotation") // TODO [tva] notify UI to rotate icons
-        }
+        pipeline.setOnFrameAvailableListener { bitmap -> _frame.onNext(Frame(bitmap)) }
+        pipeline.setOrientationChangeListener { _, rotation -> _degree.onNext(rotation) }
     }
 
     /**

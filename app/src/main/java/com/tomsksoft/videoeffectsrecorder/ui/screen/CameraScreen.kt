@@ -44,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rxjava3.subscribeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -76,7 +77,7 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FlashMode
 fun CameraScreen() {
 	val activity = LocalContext.current as ComponentActivity
 	val viewModel = viewModel<CameraViewModel>()
-	val frame by viewModel.frame.collectAsState()
+	val frame by viewModel.frame.subscribeAsState(null)
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
 
@@ -84,7 +85,7 @@ fun CameraScreen() {
 		permissions = mutableListOf(
 			Manifest.permission.CAMERA,
 			Manifest.permission.RECORD_AUDIO
-		).also { permissions ->
+		).also { permissions -> // TODO [tva] check for 13 Android
 			// up to Android 12 inclusive (32 API)
 			if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2)
 				permissions.addAll(listOf(
@@ -321,24 +322,6 @@ private fun BottomBar(
 ) {
 	// 3-segmented row to keep camera button always centered
 	Column {
-		/*Row(
-			horizontalArrangement = Arrangement.Center,
-			modifier = Modifier
-				.fillMaxWidth()
-		) {
-			Text(
-				color = MaterialTheme.colorScheme.surface,
-				text = stringResource(cameraUiState.filtersMode.description)
-			)
-		}
-		*/
-/*		val pagerState = rememberPagerState(pageCount = {10})
-		HorizontalPager(pagerState) {page ->
-			Text(
-				text = "Page: $page",
-				//modifier = Modifier.fillMaxWidth()
-			)
-		}*/
 		FiltersPager(
 			//filtersMode = cameraUiState.filtersMode,
 			//modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -491,26 +474,20 @@ private fun FiltersPager(
 				return ((availableSpace - 2 * pageSpacing) * 0.5f).toInt()
 			}
 		},*/
-		//pageSize = PageSize.Fixed(120.dp),
 		contentPadding = PaddingValues(start = 170.dp, end = 100.dp),
 		modifier = Modifier,
 		pageSpacing = 10.dp,
 
-		//contentPadding = PaddingValues(horizontal = 50.dp),
 		key = {FiltersMode.values()[it]}
 		) {index ->
 
 		FiltersMode.values()[index].description.let { content ->
 			Box {
 				Text(
-					text = stringResource(id = content)
+					text = stringResource(id = content),
+					color = MaterialTheme.colorScheme.surface
 				)
 			}
 		}
 	}
-}
-
-class CameraViewModelProvider: PreviewParameterProvider<CameraViewModel> {
-	override val values: Sequence<CameraViewModel>
-		get() = sequenceOf(CameraViewModel())
 }

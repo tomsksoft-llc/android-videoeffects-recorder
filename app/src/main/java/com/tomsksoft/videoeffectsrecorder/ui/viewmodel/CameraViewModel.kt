@@ -2,24 +2,32 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.app.Activity
 import android.graphics.Bitmap
+import android.os.Environment
+import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.CameraStoreImpl
+import com.tomsksoft.videoeffectsrecorder.data.VideoStore
 import com.tomsksoft.videoeffectsrecorder.data.Frame
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraStoreManager
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraViewManager
+import com.tomsksoft.videoeffectsrecorder.domain.usecase.FileManager
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import java.io.File
 
 class CameraViewModel: ViewModel() {
+    companion object {
+        const val RECORDS_DIRECTORY = "Effects"
+    }
 
     private val _cameraUiState : MutableStateFlow<CameraUiState>
             = MutableStateFlow(CameraUiState(
@@ -31,11 +39,12 @@ class CameraViewModel: ViewModel() {
     )
     val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
-    private val _frame = MutableStateFlow<Bitmap?>(null)
-    val frame: StateFlow<Bitmap?> = _frame.asStateFlow()
+    private val _frame = BehaviorSubject.create<Frame>()
+    val frame: Observable<Bitmap> = _frame
+        .map(Frame::bitmap)
+        .observeOn(AndroidSchedulers.mainThread())
 
     private lateinit var cameraStoreManager: CameraStoreManager<CameraImpl>
-    private lateinit var cameraViewManager: CameraViewManager<CameraImpl, Frame>
     private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame>
     private lateinit var cameraEffectsManager: CameraEffectsManager<CameraImpl>
 
@@ -50,17 +59,23 @@ class CameraViewModel: ViewModel() {
             field = value
             camera = selectCamera()
             camera.isEnabled = true
-            cameraViewManager.camera = camera
             cameraRecordManager.camera = camera
             cameraEffectsManager.camera = camera
         }
     private lateinit var camera: CameraImpl
 
     fun initializeCamera(context: Activity) {
+        val recordsDir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
+            RECORDS_DIRECTORY
+        )
         cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
         camera = selectCamera()
-        cameraViewManager = CameraViewManager(camera) { _frame.value = it.bitmap }
-        cameraRecordManager = CameraRecordManager(camera, VideoRecorderImpl(context.applicationContext))
+        cameraRecordManager = CameraRecordManager(
+            camera,
+            FileManager(VideoStore(recordsDir)),
+            VideoRecorderImpl(context.applicationContext)
+        )
         cameraEffectsManager = CameraEffectsManager(
             camera,
             CameraConfig(
@@ -105,7 +120,7 @@ class CameraViewModel: ViewModel() {
                 backgroundMode = CameraConfig.BackgroundMode.Blur(0.5)  // TODO [fmv] add appropriate way to change blur power
             }
             FiltersMode.REPLACE_BACK -> {
-                //backgroundMode = CameraConfig.BackgroundMode.Replace() // waiting for useacase implementation
+                backgroundMode = CameraConfig.BackgroundMode.Replace()
             }
             FiltersMode.BEAUTIFY -> {
                 beautification = CameraConfig.Beautification(30) // TODO [fmv] add appropriate way to change beautification power
@@ -143,30 +158,35 @@ class CameraViewModel: ViewModel() {
     }
 
     fun captureImage(){
+        Log.d("Camera View Model", "Capture image")
         // TODO: [fmv] add usecase interaction
     }
 
     fun startVideoRecording(){
-        viewModelScope.launch{
-            _cameraUiState.update {cameraUiState ->
-                cameraUiState.copy(
-                    isVideoRecording = true
-                )
-            }
-            cameraRecordManager.isRecording = true
+        Log.d("Camera View Model", "Start recording")
+
+        _cameraUiState.update {cameraUiState ->
+            cameraUiState.copy(
+                isVideoRecording = true
+            )
         }
+        cameraRecordManager.isRecording = true
+
     }
 
     fun stopVideoRecording() {
-        viewModelScope.launch{
-            _cameraUiState.update {cameraUiState ->
-                cameraUiState.copy(
-                    isVideoRecording = false
-                )
-            }
-            cameraRecordManager.isRecording = false
+        _cameraUiState.update {cameraUiState ->
+            cameraUiState.copy(
+                isVideoRecording = false
+            )
         }
+        Log.d("Camera View Model", "Stop recording")
+        cameraRecordManager.isRecording = false
     }
 
-    private fun selectCamera() = cameraStoreManager.cameras[cameraIndex].copy()
+    private fun selectCamera(): CameraImpl {
+        val camera = cameraStoreManager.cameras[cameraIndex].copy()
+        camera.frame.subscribe(_frame)
+        return camera
+    }
 }

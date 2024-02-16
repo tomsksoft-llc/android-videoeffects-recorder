@@ -1,34 +1,40 @@
 package com.tomsksoft.videoeffectsrecorder.data
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Rect
 import android.media.MediaRecorder
 import android.os.Build
-import android.os.Environment
 import android.util.Log
+import android.os.Environment
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
+import io.reactivex.rxjava3.subjects.BehaviorSubject
+import io.reactivex.rxjava3.subjects.Subject
 import java.io.File
+import java.io.FileDescriptor
 
+
+@SuppressLint("CheckResult")
 class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
 
-    private var record: VideoRecorder.Record<Frame>? = null
+    override val frame: Subject<Frame> = BehaviorSubject.create()
+    override val degree: Subject<Int> = BehaviorSubject.create()
 
-    override fun onFrame(frame: Frame) {
-        record?.onFrame(frame)
+    @Volatile
+    private var cachedDegree: Int? = null
+
+    init {
+        degree.observeOn(Schedulers.io()).subscribe {
+            cachedDegree = it
+        }
     }
 
-    override fun startRecord(): VideoRecorder.Record<Frame> =
-        RecordImpl(context).also { record = it }
+    override fun startRecord(outputFile: File): VideoRecorder.Record = RecordImpl(outputFile)
 
-    private class RecordImpl(context: Context): VideoRecorder.Record<Frame> {
-        companion object {
-            const val FPS = 30
-            val DEBUG_FILE = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-                "effects.mp4" // TODO [tva] get free name for file
-            )
-        }
+    private inner class RecordImpl(private val outputFile: File): VideoRecorder.Record {
 
         private val mediaRecorder = (
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
@@ -36,28 +42,26 @@ class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
                 else
                     MediaRecorder(context)
             )
+        @Volatile
         private var surface: Surface? = null
+        private var disposableFrameSubscription: Disposable? = null
 
-        override fun onFrame(frame: Frame) {
-            val (width, height) = frame.bitmap.width to frame.bitmap.height
-            if (surface == null) // first frame setups MediaRecorder with appropriate video size
-                start(width, height)
-
-            // ---> exception handling necessary for code with jni function calls (it would crash at runtime on my device)
-            try {
+        init {
+            disposableFrameSubscription = frame.observeOn(Schedulers.io()).subscribe { frame ->
+                val (width, height) = frame.bitmap.width to frame.bitmap.height
+                // first frame setups MediaRecorder with appropriate video size and orientation
+                if (surface == null)
+                    start(width, height)
                 val canvas = surface!!.lockCanvas(
                     Rect(0, 0, width, height)
-                ) ?: return
+                ) ?: return@subscribe
                 canvas.drawBitmap(frame.bitmap, 0f, 0f, null)
                 surface!!.unlockCanvasAndPost(canvas)
-            } catch (e: Exception) {
-                Log.e("RecordImpl", "$e")
             }
-            // <--- exception handling necessary for code with jni function calls (it would crash at runtime on my device)
-
         }
 
         override fun close() {
+            disposableFrameSubscription?.dispose()
             mediaRecorder.stop()
             mediaRecorder.release()
         }
@@ -69,12 +73,17 @@ class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
 
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
 
-                setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT)
-                setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setVideoEncoder(MediaRecorder.VideoEncoder.H264)
 
-                setVideoFrameRate(FPS) // is it different from setCaptureRate()?
+                setAudioEncodingBitRate(16)
+                setAudioSamplingRate(44_100)
+                setVideoEncodingBitRate(6_000_000)
+                setVideoFrameRate(30) // use also setCaptureRate() for time lapse
                 setVideoSize(width, height)
-                setOutputFile(DEBUG_FILE)
+
+                setOrientationHint((360 - (cachedDegree ?: 0)) % 360)
+                setOutputFile(outputFile)
 
                 prepare()
                 start()
