@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.io.File
 
+private const val TAG = "Camera View Model"
+
 class CameraViewModel: ViewModel() {
     companion object {
         const val RECORDS_DIRECTORY = "Effects"
@@ -117,21 +119,28 @@ class CameraViewModel: ViewModel() {
 
         when (filtersMode) {
             FiltersMode.BLUR -> {
+                Log.d(TAG, "Blur mode selected")
                 backgroundMode = CameraConfig.BackgroundMode.Blur(0.5)  // TODO [fmv] add appropriate way to change blur power
             }
             FiltersMode.REPLACE_BACK -> {
+                Log.d(TAG, "Background mode selected")
                 backgroundMode = CameraConfig.BackgroundMode.Replace()
             }
             FiltersMode.BEAUTIFY -> {
+                Log.d(TAG, "Beatify mode selected")
                 beautification = CameraConfig.Beautification(30) // TODO [fmv] add appropriate way to change beautification power
             }
             FiltersMode.SMART_ZOOM -> {
+                Log.d(TAG, "Smart zoom mode selected")
                 smartZoom = CameraConfig.SmartZoom(20) // TODO [fmv] add appropriate way to change face size
             }
             FiltersMode.COLOR_CORRECTION -> {
+                Log.d(TAG, "Color correction mode selected")
                 colorCorrection = CameraConfig.ColorCorrection.COLOR_CORRECTION
             }
-            FiltersMode.NONE -> {}
+            FiltersMode.NONE -> {
+                Log.d(TAG, "NO mode selected")
+            }
         }
 
         cameraEffectsManager.config = CameraConfig(
@@ -158,12 +167,12 @@ class CameraViewModel: ViewModel() {
     }
 
     fun captureImage(){
-        Log.d("Camera View Model", "Capture image")
+        Log.d(TAG, "Capture image")
         // TODO: [fmv] add usecase interaction
     }
 
     fun startVideoRecording(){
-        Log.d("Camera View Model", "Start recording")
+        Log.d(TAG, "Start recording")
 
         _cameraUiState.update {cameraUiState ->
             cameraUiState.copy(
@@ -180,7 +189,7 @@ class CameraViewModel: ViewModel() {
                 isVideoRecording = false
             )
         }
-        Log.d("Camera View Model", "Stop recording")
+        Log.d(TAG, "Stop recording")
         cameraRecordManager.isRecording = false
     }
 
