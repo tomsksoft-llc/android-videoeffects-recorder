@@ -37,11 +37,13 @@ dependencies {
 	testImplementation("junit:junit:4.13.2")
 	androidTestImplementation("androidx.test.ext:junit:1.1.5")
 	androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+	/* RxJava */
+	implementation("io.reactivex.rxjava3:rxjava:3.1.5")
 	/* Effects SDK */
 	implementation("com.google.flogger:flogger:0.6")
 	implementation("com.google.flogger:flogger-system-backend:0.6")
 	implementation("com.google.guava:guava:27.0.1-android")
-	implementation(files("libs/effects.aar"))
+	implementation(files("../libs/effects.aar"))
 	implementation("androidx.camera:camera-camera2:1.2.0")
 	implementation("androidx.camera:camera-extensions:1.2.0")
 	implementation("androidx.camera:camera-lifecycle:1.2.0")

@@ -1,14 +1,8 @@
 package com.tomsksoft.videoeffectsrecorder.domain
 
-interface Camera<F> {
+interface Camera<F: Any>: FrameProvider<F> {
 
     var isEnabled: Boolean
 
-    fun subscribe(listener: OnFrameListener<F>)
-
-    fun unsubscribe(listener: OnFrameListener<F>)
-
-    fun interface OnFrameListener<F> {
-        fun onFrame(frame: F)
-    }
+    fun configure(config: CameraConfig)
 }

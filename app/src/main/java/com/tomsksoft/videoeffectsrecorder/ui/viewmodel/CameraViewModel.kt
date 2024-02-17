@@ -2,23 +2,32 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.app.Activity
 import android.graphics.Bitmap
+import android.os.Environment
+import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.tomsksoft.videoeffectsrecorder.data.CameraConfigurerImpl
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.CameraStoreImpl
+import com.tomsksoft.videoeffectsrecorder.data.VideoStore
 import com.tomsksoft.videoeffectsrecorder.data.Frame
-import com.tomsksoft.videoeffectsrecorder.data.VideoRepositoryImpl
+import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraStoreManager
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraViewManager
+import com.tomsksoft.videoeffectsrecorder.domain.usecase.FileManager
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.io.File
 
-class CameraViewModel : ViewModel() {
+class CameraViewModel: ViewModel() {
+    companion object {
+        const val RECORDS_DIRECTORY = "Effects"
+    }
 
     private val _cameraUiState : MutableStateFlow<CameraUiState>
             = MutableStateFlow(CameraUiState(
@@ -28,11 +37,12 @@ class CameraViewModel : ViewModel() {
     )
     val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
-    private val _frame = MutableStateFlow<Bitmap?>(null)
-    val frame: StateFlow<Bitmap?> = _frame.asStateFlow()
+    private val _frame = BehaviorSubject.create<Frame>()
+    val frame: Observable<Bitmap> = _frame
+        .map(Frame::bitmap)
+        .observeOn(AndroidSchedulers.mainThread())
 
     private lateinit var cameraStoreManager: CameraStoreManager<CameraImpl>
-    private lateinit var cameraViewManager: CameraViewManager<CameraImpl, Frame>
     private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame>
     private lateinit var cameraEffectsManager: CameraEffectsManager<CameraImpl>
 
@@ -45,18 +55,25 @@ class CameraViewModel : ViewModel() {
             if (field == value) return
             camera.isEnabled = false
             field = value
+            camera = selectCamera()
             camera.isEnabled = true
-            cameraViewManager.camera = camera
             cameraRecordManager.camera = camera
             cameraEffectsManager.camera = camera
         }
-    private val camera: CameraImpl
-        get() = cameraStoreManager.cameras[cameraIndex]
+    private lateinit var camera: CameraImpl
 
     fun initializeCamera(context: Activity) {
+        val recordsDir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
+            RECORDS_DIRECTORY
+        )
         cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
-        cameraViewManager = CameraViewManager(camera) { _frame.value = it.bitmap }
-        cameraRecordManager = CameraRecordManager(camera, VideoRepositoryImpl())
+        camera = selectCamera()
+        cameraRecordManager = CameraRecordManager(
+            camera,
+            FileManager(VideoStore(recordsDir)),
+            VideoRecorderImpl(context.applicationContext)
+        )
         cameraEffectsManager = CameraEffectsManager(
             camera,
             CameraConfig(
@@ -64,8 +81,7 @@ class CameraViewModel : ViewModel() {
                 smartZoom = null,
                 beautification = null,
                 colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
-            ),
-            CameraConfigurerImpl()
+            )
         )
         camera.isEnabled = true
     }
@@ -130,18 +146,27 @@ class CameraViewModel : ViewModel() {
     }
 
     fun flipCamera(){
-            cameraIndex = (cameraIndex + 1) % cameraStoreManager.camerasCount
+        cameraIndex = (cameraIndex + 1) % cameraStoreManager.camerasCount
     }
 
     fun captureImage(){
+        Log.d("Camera View Model", "Capture image")
         // TODO: [fmv] add usecase interaction
     }
 
     fun startVideoRecording(){
-        // TODO: [fmv] add state change and usecase interaction
+        Log.d("Camera View Model", "Start recording")
+        cameraRecordManager.isRecording = true
     }
 
     fun stopVideoRecording() {
-        // TODO: [fmv] add state change and usecase interaction
+        Log.d("Camera View Model", "Stop recording")
+        cameraRecordManager.isRecording = false
+    }
+
+    private fun selectCamera(): CameraImpl {
+        val camera = cameraStoreManager.cameras[cameraIndex].copy()
+        camera.frame.subscribe(_frame)
+        return camera
     }
 }

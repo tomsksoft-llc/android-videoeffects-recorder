@@ -1,5 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
+import androidx.annotation.StringRes
 import com.tomsksoft.videoeffectsrecorder.R
 
 /**
@@ -23,7 +24,7 @@ enum class FlashMode {
 /**
  * Defines current filter mode
  */
-enum class FiltersMode(val description: Int) {
+enum class FiltersMode(@StringRes val description: Int) {
     BLUR(R.string.effects_blur),
     REPLACE_BACK(R.string.effects_replace_background),
     BEAUTIFY(R.string.effects_beautify),
