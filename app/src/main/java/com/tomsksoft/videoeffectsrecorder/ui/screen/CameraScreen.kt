@@ -6,12 +6,15 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -23,18 +26,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyListItemInfo
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rxjava3.subscribeAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,12 +56,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -57,6 +71,8 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ExpandedTopBarMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FlashMode
+import kotlinx.coroutines.flow.distinctUntilChanged
+
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Preview(widthDp = 450, heightDp = 800, showBackground = true)
@@ -66,6 +82,7 @@ fun CameraScreen() {
 	val viewModel = viewModel<CameraViewModel>()
 	val frame by viewModel.frame.subscribeAsState(null)
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
+	val snackbarHostState = remember { SnackbarHostState() }
 
 	val permissions = rememberMultiplePermissionsState(
 		permissions = mutableListOf(
@@ -88,31 +105,52 @@ fun CameraScreen() {
 	}
 	LaunchedEffect(Unit) { permissions.launchMultiplePermissionRequest() }
 
-	Box {
-		// effects sdk camera feed; stays behind all other elements
-		EffectsCameraPreview(frame)
-
-		// elements of ui on top of the camera feed
+	if(!cameraUiState.isCameraInitialized){
 		Column(
 			modifier = Modifier
-				.fillMaxHeight()
-				.fillMaxWidth(),
-			verticalArrangement = Arrangement.SpaceBetween,
+				.fillMaxSize()
+				.background(Color.Black),
+			verticalArrangement = Arrangement.Center,
+			horizontalAlignment = Alignment.CenterHorizontally
 		) {
+			CircularProgressIndicator(modifier = Modifier.size(50.dp))
+			Text(text = stringResource(R.string.camera_not_ready), color = Color.White)
+		}
+	}
+	else {
+		Box {
+			// effects sdk camera feed; stays behind all other elements
+			EffectsCameraPreview(frame, snackbarHostState)
 
-			TopBar(
-				cameraUiState,
-				viewModel::toggleQuickSettingsIndicator,
-				viewModel::setFlash,
-				viewModel::setFilters,
-			)
-			BottomBar(
-				cameraUiState,
-				viewModel::flipCamera,
-				viewModel::captureImage,
-				viewModel::startVideoRecording,
-				viewModel::stopVideoRecording
-			)
+			// elements of ui on top of the camera feed
+			Column(
+				modifier = Modifier
+					.fillMaxHeight()
+					.fillMaxWidth(),
+				verticalArrangement = Arrangement.SpaceBetween,
+			) {
+
+				TopBar(
+					cameraUiState,
+					viewModel::toggleQuickSettingsIndicator,
+					viewModel::setFlash,
+					viewModel::setFilters,
+				)
+				Box(modifier = Modifier.weight(1f)) {
+					CameraSnackbar(
+						snackbarHostState = snackbarHostState,
+						modifier = Modifier.align(Alignment.BottomCenter)
+					)
+				}
+				BottomBar(
+					cameraUiState = cameraUiState,
+					onFlipCameraClick = viewModel::flipCamera,
+					onCaptureClick = viewModel::captureImage,
+					onLongPress = viewModel::startVideoRecording,
+					onRelease = viewModel::stopVideoRecording,
+					onFilterSettingClick = viewModel::setFilters
+				)
+			}
 		}
 	}
 }
@@ -130,7 +168,8 @@ private fun ImageButton(painter: Painter, onClick: () -> Unit) {
 
 @Composable
 private fun EffectsCameraPreview(
-	frame: Bitmap?
+	frame: Bitmap?,
+	snackbarHostState: SnackbarHostState
 ){
 	Box(
 		contentAlignment = Alignment.Center,
@@ -138,15 +177,18 @@ private fun EffectsCameraPreview(
 			.fillMaxSize()
 			.background(MaterialTheme.colorScheme.onSurface),
 	){
-		if (frame == null) {
+
+		if (frame == null){
+			val snackbarMessage = stringResource(id = R.string.camera_not_ready)
+			LaunchedEffect(snackbarHostState){
+				snackbarHostState.showSnackbar(snackbarMessage)
+			}
 			Column(
 				horizontalAlignment = Alignment.CenterHorizontally,
 			) {
-				Text(
-					modifier = Modifier,
-					text = stringResource(R.string.camera_not_ready),
+				CircularProgressIndicator(
+					modifier = Modifier.width(64.dp),
 					color = MaterialTheme.colorScheme.surface,
-					fontSize = 16.sp,
 				)
 			}
 		}
@@ -271,26 +313,19 @@ private fun TopBar(
 	}
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BottomBar(
 	cameraUiState: CameraUiState,
 	onFlipCameraClick: () -> Unit,
 	onCaptureClick: () -> Unit,
 	onLongPress: () -> Unit,
-	onRelease: () -> Unit
+	onRelease: () -> Unit,
+	onFilterSettingClick: (FiltersMode) -> Unit
 ) {
 	// 3-segmented row to keep camera button always centered
 	Column {
-		Row(
-			horizontalArrangement = Arrangement.Center,
-			modifier = Modifier
-				.fillMaxWidth()
-		) {
-			Text(
-				color = MaterialTheme.colorScheme.surface,
-				text = stringResource(cameraUiState.filtersMode.description)
-			)
-		}
+		FiltersCarousel(onFilterSettingClick)
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
@@ -313,7 +348,8 @@ private fun BottomBar(
 					.weight(1f),
 				onClick = onCaptureClick,
 				onLongPress = onLongPress,
-				onRelease = onRelease
+				onRelease = onRelease,
+				isVideoRecording = cameraUiState.isVideoRecording
 			)
 
 			// segment right of capture button
@@ -336,7 +372,8 @@ private fun BottomBar(
 }
 
 @Composable
-fun CaptureButton(
+private fun CaptureButton(
+	isVideoRecording: Boolean,
 	modifier: Modifier = Modifier,
 	onClick: () -> Unit,
 	onLongPress: () -> Unit,
@@ -363,8 +400,7 @@ fun CaptureButton(
 	) {
 		Canvas(modifier = Modifier.size(110.dp), onDraw = {
 			drawCircle(
-				// TODO [fmv] add changing colors that depend on video recording state
-				color = Color.Transparent
+				color = if (isVideoRecording) Color.Red else Color.Transparent
 			)
 		})
 	}
@@ -384,5 +420,97 @@ private fun FlipCameraButton(
 			contentDescription = null,
 			modifier = Modifier.size(72.dp)
 		)
+	}
+}
+
+/**
+ * Snackbar for this screen
+ */
+@Composable
+private fun CameraSnackbar(
+	snackbarHostState: SnackbarHostState,
+	modifier: Modifier = Modifier,
+){
+	SnackbarHost(
+		hostState = snackbarHostState,
+		snackbar = { data ->
+			Snackbar(
+				modifier = Modifier
+					.padding(10.dp),
+				content = {
+					Text(
+						text = data.visuals.message,
+					)
+				},
+			)
+		},
+		modifier = modifier
+			.wrapContentHeight(Alignment.Bottom)
+	)
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FiltersCarousel(
+	onPageChange: (FiltersMode) -> Unit
+){
+
+	val carouselState = rememberLazyListState()
+	var xOffset = 0
+
+	BoxWithConstraints(
+		modifier = Modifier.fillMaxWidth()
+	) {
+		LazyRow(
+			//modifier = Modifier.fillMaxWidth(),
+			state = carouselState,
+			flingBehavior = rememberSnapFlingBehavior(lazyListState = carouselState),
+			horizontalArrangement = Arrangement.Center
+		) {
+			itemsIndexed(enumValues<FiltersMode>()) { index, mode ->
+				Layout(
+					content = {
+						Text(
+							modifier = Modifier
+								.padding(horizontal = 16.dp),
+							text = stringResource(id = mode.description),
+							color = MaterialTheme.colorScheme.surface
+						)
+					},
+					measurePolicy = { measurables, constraints ->
+						val placeable = measurables.first().measure(constraints)
+						val maxWidthInPx = maxWidth.roundToPx()
+						val itemWidth = placeable.width
+						xOffset = (maxWidthInPx - itemWidth) / 2
+						val startSpace = if (index == 0) xOffset else 0
+						val endSpace =
+							if (index == enumValues<FiltersMode>().lastIndex) xOffset else 0
+						val width = startSpace + placeable.width + endSpace
+						layout(width, placeable.height) {
+							val x = if (index == 0) startSpace else 0
+							placeable.place(x, 0)
+						}
+					}
+				)
+			}
+		}
+
+		LaunchedEffect(carouselState){
+			snapshotFlow { carouselState.layoutInfo.visibleItemsInfo }
+				.distinctUntilChanged { old, new ->
+					old.zip(new).all { (n1, n2) -> (compareValuesBy(n1, n2, {it.offset}, {it.index} ) == 0) }
+				}
+				.collect{ visibleItemsInfo ->
+					val item = visibleItemsInfo.find { visibleItem ->
+						val delta = visibleItem.size / 2
+						val center = carouselState.layoutInfo.viewportEndOffset / 2
+						val childCenter = visibleItem.offset + visibleItem.size / 2
+						val target = childCenter - center
+						target in -delta..delta
+					}
+					onPageChange(enumValues<FiltersMode>()[item!!.index])
+				}
+
+		}
 	}
 }

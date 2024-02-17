@@ -30,6 +30,8 @@ android {
 }
 
 dependencies {
+	val camera_version = "1.2.0"
+
 	implementation(project(mapOf("path" to ":domain")))
 	implementation("androidx.core:core-ktx:1.9.0")
 	implementation("androidx.appcompat:appcompat:1.6.1")
@@ -44,8 +46,8 @@ dependencies {
 	implementation("com.google.flogger:flogger-system-backend:0.6")
 	implementation("com.google.guava:guava:27.0.1-android")
 	implementation(files("../libs/effects.aar"))
-	implementation("androidx.camera:camera-camera2:1.2.0")
-	implementation("androidx.camera:camera-extensions:1.2.0")
-	implementation("androidx.camera:camera-lifecycle:1.2.0")
-	implementation("androidx.camera:camera-view:1.2.0")
+	implementation("androidx.camera:camera-camera2:$camera_version")
+	implementation("androidx.camera:camera-extensions:$camera_version")
+	implementation("androidx.camera:camera-lifecycle:$camera_version")
+	implementation("androidx.camera:camera-view:$camera_version")
 }
