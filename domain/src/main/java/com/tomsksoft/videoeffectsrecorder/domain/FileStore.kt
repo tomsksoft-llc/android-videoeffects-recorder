@@ -1,12 +1,8 @@
 package com.tomsksoft.videoeffectsrecorder.domain
 
-import java.io.File
-
-interface FileStore {
-
-    val directory: File
-
-    fun getList(): List<File>
-
-    fun create(filename: String, mimeType: String): File // TODO [tva] use scoped storage
+/**
+ * @param T file
+ */
+interface FileStore<T> {
+    fun create(filename: String, extension: String, mimeType: String): T
 }

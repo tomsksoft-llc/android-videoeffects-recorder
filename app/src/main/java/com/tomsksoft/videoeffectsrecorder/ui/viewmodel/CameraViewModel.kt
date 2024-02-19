@@ -3,6 +3,7 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 import android.app.Activity
 import android.graphics.Bitmap
 import android.os.Environment
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
@@ -14,7 +15,6 @@ import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraStoreManager
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.FileManager
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
@@ -47,7 +47,7 @@ class CameraViewModel: ViewModel() {
         .observeOn(AndroidSchedulers.mainThread())
 
     private lateinit var cameraStoreManager: CameraStoreManager<CameraImpl>
-    private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame>
+    private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame, ParcelFileDescriptor>
     private lateinit var cameraEffectsManager: CameraEffectsManager<CameraImpl>
 
     /**
@@ -67,15 +67,11 @@ class CameraViewModel: ViewModel() {
     private lateinit var camera: CameraImpl
 
     fun initializeCamera(context: Activity) {
-        val recordsDir = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-            RECORDS_DIRECTORY
-        )
         cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
         camera = selectCamera()
         cameraRecordManager = CameraRecordManager(
             camera,
-            FileManager(VideoStore(recordsDir)),
+            VideoStore(context.applicationContext, RECORDS_DIRECTORY),
             VideoRecorderImpl(context.applicationContext)
         )
         cameraEffectsManager = CameraEffectsManager(
