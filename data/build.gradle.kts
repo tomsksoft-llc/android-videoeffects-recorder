@@ -1,14 +1,14 @@
 plugins {
-	id("com.android.library")
-	id("org.jetbrains.kotlin.android")
+	alias(libs.plugins.android.library)
+	alias(libs.plugins.kotlin.android)
 }
 
 android {
 	namespace = "com.tomsksoft.videoeffectsrecorder.data"
-	compileSdk = 33
+	compileSdk = libs.versions.compileSdk.get().toInt()
 
 	defaultConfig {
-		minSdk = 27
+		minSdk = libs.versions.midSdk.get().toInt()
 
 		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 		consumerProguardFiles("consumer-rules.pro")
@@ -30,24 +30,25 @@ android {
 }
 
 dependencies {
-	val camera_version = "1.2.0"
-
 	implementation(project(mapOf("path" to ":domain")))
-	implementation("androidx.core:core-ktx:1.9.0")
-	implementation("androidx.appcompat:appcompat:1.6.1")
-	implementation("com.google.android.material:material:1.11.0")
-	testImplementation("junit:junit:4.13.2")
-	androidTestImplementation("androidx.test.ext:junit:1.1.5")
-	androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+	implementation(libs.androidx.core.ktx)
+	implementation(libs.androidx.appcompat)
+	implementation(libs.android.material)
+
+	testImplementation(libs.junit)
+	androidTestImplementation(libs.androidx.test.ext)
+	androidTestImplementation(libs.androidx.test.espresso)
+
 	/* RxJava */
-	implementation("io.reactivex.rxjava3:rxjava:3.1.5")
+	implementation(libs.rxjava3.rxjava)
+
 	/* Effects SDK */
-	implementation("com.google.flogger:flogger:0.6")
-	implementation("com.google.flogger:flogger-system-backend:0.6")
-	implementation("com.google.guava:guava:27.0.1-android")
+	implementation(libs.flogger.flogger)
+	implementation(libs.flogger.system.backend)
+	implementation(libs.guava)
 	implementation(files("../libs/effects.aar"))
-	implementation("androidx.camera:camera-camera2:$camera_version")
-	implementation("androidx.camera:camera-extensions:$camera_version")
-	implementation("androidx.camera:camera-lifecycle:$camera_version")
-	implementation("androidx.camera:camera-view:$camera_version")
+	implementation(libs.androidx.camera.camera2)
+	implementation(libs.androidx.camera.extensions)
+	implementation(libs.androidx.camera.lifecycle)
+	implementation(libs.androidx.camera.view)
 }
