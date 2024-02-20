@@ -1,6 +1,7 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import android.Manifest
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.os.Build
 import android.widget.Toast
@@ -10,7 +11,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,9 +50,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rxjava3.subscribeAsState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,11 +62,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -69,9 +76,10 @@ import com.tomsksoft.videoeffectsrecorder.R
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ExpandedTopBarMode
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FlashMode
-import kotlinx.coroutines.flow.distinctUntilChanged
+import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
+import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -134,7 +142,7 @@ fun CameraScreen() {
 					cameraUiState,
 					viewModel::toggleQuickSettingsIndicator,
 					viewModel::setFlash,
-					viewModel::setFilters,
+					viewModel::setSecondaryFilters,
 				)
 				Box(modifier = Modifier.weight(1f)) {
 					CameraSnackbar(
@@ -148,7 +156,7 @@ fun CameraScreen() {
 					onCaptureClick = viewModel::captureImage,
 					onLongPress = viewModel::startVideoRecording,
 					onRelease = viewModel::stopVideoRecording,
-					onFilterSettingClick = viewModel::setFilters
+					onFilterSettingClick = viewModel::setPrimaryFilter
 				)
 			}
 		}
@@ -156,12 +164,12 @@ fun CameraScreen() {
 }
 
 @Composable
-private fun ImageButton(painter: Painter, onClick: () -> Unit) {
+private fun ImageButton(painter: Painter, onClick: () -> Unit, tint: Color = MaterialTheme.colorScheme.onPrimary) {
 	IconButton(onClick = onClick) {
 		Icon(
 			painter = painter,
 			contentDescription = null,
-			tint = MaterialTheme.colorScheme.onPrimary
+			tint = tint
 		)
 	}
 }
@@ -208,7 +216,7 @@ private fun TopBar(
 	cameraUiState: CameraUiState,
 	onToggleTopBar: (ExpandedTopBarMode) -> Unit,
 	onFlashSettingClick: (FlashMode) -> Unit,
-	onFilterSettingClick: (FiltersMode) -> Unit
+	onFilterSettingClick: (SecondaryFiltersMode) -> Unit
 ){
 	Row(
 		horizontalArrangement = Arrangement.Absolute.SpaceAround,
@@ -240,51 +248,6 @@ private fun TopBar(
 					}
 				)
 			}
-			ExpandedTopBarMode.FILTERS -> {
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_filter_blur),
-					onClick = {
-						onFilterSettingClick(FiltersMode.BLUR)
-						onToggleTopBar(ExpandedTopBarMode.DEFAULT)
-
-					}
-				)
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_filter_background),
-					onClick = {
-						onFilterSettingClick(FiltersMode.REPLACE_BACK)
-						onToggleTopBar(ExpandedTopBarMode.DEFAULT)
-					}
-				)
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_filter_beautify),
-					onClick = {
-						onFilterSettingClick(FiltersMode.BEAUTIFY)
-						onToggleTopBar(ExpandedTopBarMode.DEFAULT)
-					}
-				)
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_filter_smart_zoom),
-					onClick = {
-						onFilterSettingClick(FiltersMode.SMART_ZOOM)
-						onToggleTopBar(ExpandedTopBarMode.DEFAULT)
-					}
-				)
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_filter_color_correction),
-					onClick = {
-						onFilterSettingClick(FiltersMode.COLOR_CORRECTION)
-						onToggleTopBar(ExpandedTopBarMode.DEFAULT)
-					}
-				)
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_filter_none),
-					onClick = {
-						onFilterSettingClick(FiltersMode.NONE)
-						onToggleTopBar(ExpandedTopBarMode.DEFAULT)
-					}
-				)
-			}
 			ExpandedTopBarMode.SETTINGS -> {
 				//TODO [fmv] expanded camera settings
 			}
@@ -298,10 +261,23 @@ private fun TopBar(
 					onClick = { onToggleTopBar(ExpandedTopBarMode.FLASH) }
 				)
 
-				ImageButton( // filters
-					painter = painterResource(R.drawable.ic_filter),
-					onClick = {onToggleTopBar(ExpandedTopBarMode.FILTERS)}
+				// ---> two secondary filters options
+				ImageButton(
+					painter = painterResource(id = R.drawable.ic_filter_beautify),
+					onClick = {
+						onFilterSettingClick(SecondaryFiltersMode.BEAUTIFY)
+					},
+					tint = if (cameraUiState.isBeautifyEnabled) Color.Yellow else MaterialTheme.colorScheme.onPrimary
 				)
+
+				ImageButton(
+					painter = painterResource(id = R.drawable.ic_filter_smart_zoom),
+					onClick = {
+						onFilterSettingClick(SecondaryFiltersMode.SMART_ZOOM)
+					},
+					tint = if (cameraUiState.isSmartZoomEnabled) Color.Yellow else MaterialTheme.colorScheme.onPrimary
+				)
+				// <--- two secondary filters options
 
 				ImageButton( // secondary options
 					painter = painterResource(R.drawable.ic_more),
@@ -321,11 +297,14 @@ private fun BottomBar(
 	onCaptureClick: () -> Unit,
 	onLongPress: () -> Unit,
 	onRelease: () -> Unit,
-	onFilterSettingClick: (FiltersMode) -> Unit
+	onFilterSettingClick: (PrimaryFiltersMode) -> Unit
 ) {
 	// 3-segmented row to keep camera button always centered
 	Column {
-		FiltersCarousel(onFilterSettingClick)
+		FiltersCarousel(
+			primaryFiltersModeSelected = cameraUiState.primaryFiltersMode,
+			onFilterSelected = onFilterSettingClick
+		)
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
@@ -451,66 +430,50 @@ private fun CameraSnackbar(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FiltersCarousel(
-	onPageChange: (FiltersMode) -> Unit
-){
+fun FiltersCarousel (
+	primaryFiltersModeSelected: PrimaryFiltersMode,
+	onFilterSelected: (PrimaryFiltersMode) -> Unit
+) {
+	val carouselState = rememberLazyListState(Int.MAX_VALUE / 2)
+	val scope = rememberCoroutineScope()
+	val filters = enumValues<PrimaryFiltersMode>()
+	val itemsCount = Int.MAX_VALUE
+	val snappingLayout = remember(carouselState) { SnapLayoutInfoProvider(carouselState) }
+	val snapFlingBehavior : FlingBehavior = rememberSnapFlingBehavior(snappingLayout)
 
-	val carouselState = rememberLazyListState()
-	var xOffset = 0
+	// TODO [fmv] snap initial item to the center of the screen
 
-	BoxWithConstraints(
-		modifier = Modifier.fillMaxWidth()
+	// TODO [fmv] add ability to launch filter selection callback at the end of the snapping animation
+	LazyRow (
+		state = carouselState,
+		flingBehavior = snapFlingBehavior,
 	) {
-		LazyRow(
-			//modifier = Modifier.fillMaxWidth(),
-			state = carouselState,
-			flingBehavior = rememberSnapFlingBehavior(lazyListState = carouselState),
-			horizontalArrangement = Arrangement.Center
-		) {
-			itemsIndexed(enumValues<FiltersMode>()) { index, mode ->
-				Layout(
-					content = {
-						Text(
-							modifier = Modifier
-								.padding(horizontal = 16.dp),
-							text = stringResource(id = mode.description),
-							color = MaterialTheme.colorScheme.surface
-						)
-					},
-					measurePolicy = { measurables, constraints ->
-						val placeable = measurables.first().measure(constraints)
-						val maxWidthInPx = maxWidth.roundToPx()
-						val itemWidth = placeable.width
-						xOffset = (maxWidthInPx - itemWidth) / 2
-						val startSpace = if (index == 0) xOffset else 0
-						val endSpace =
-							if (index == enumValues<FiltersMode>().lastIndex) xOffset else 0
-						val width = startSpace + placeable.width + endSpace
-						layout(width, placeable.height) {
-							val x = if (index == 0) startSpace else 0
-							placeable.place(x, 0)
+		items (
+			count = itemsCount
+		) {index ->
+			val horizontalPadding = 10.dp
+			var textSize by remember { mutableStateOf(IntSize.Zero)	}
+			Text(
+				text = stringResource(id = filters[index % filters.size].description),
+				color = if (filters[index % filters.size] == primaryFiltersModeSelected) Color.Yellow
+						else MaterialTheme.colorScheme.onPrimary,
+				modifier = Modifier
+					.padding(horizontal = horizontalPadding)
+					.onSizeChanged { textSize = it }
+					.clickable {
+						onFilterSelected(filters[index % filters.size])
+						scope.launch {
+							carouselState.animateScrollToItem(
+								index = index,
+								// center of the lazyrow viewport is calculated; text size and padding being subtracted
+								scrollOffset = -((carouselState.layoutInfo.viewportEndOffset / 2) - textSize.width / 2 - horizontalPadding.value.toPx())
+							)
 						}
 					}
-				)
-			}
-		}
-
-		LaunchedEffect(carouselState){
-			snapshotFlow { carouselState.layoutInfo.visibleItemsInfo }
-				.distinctUntilChanged { old, new ->
-					old.zip(new).all { (n1, n2) -> (compareValuesBy(n1, n2, {it.offset}, {it.index} ) == 0) }
-				}
-				.collect{ visibleItemsInfo ->
-					val item = visibleItemsInfo.find { visibleItem ->
-						val delta = visibleItem.size / 2
-						val center = carouselState.layoutInfo.viewportEndOffset / 2
-						val childCenter = visibleItem.offset + visibleItem.size / 2
-						val target = childCenter - center
-						target in -delta..delta
-					}
-					onPageChange(enumValues<FiltersMode>()[item!!.index])
-				}
-
+			)
 		}
 	}
+
 }
+
+fun Float.toPx(): Int = (this * Resources.getSystem().displayMetrics.density).toInt()
