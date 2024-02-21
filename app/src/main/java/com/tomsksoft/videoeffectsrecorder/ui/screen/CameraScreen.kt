@@ -1,7 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import android.Manifest
-import android.content.res.Resources
 import android.graphics.Bitmap
 import android.os.Build
 import android.widget.Toast
@@ -18,7 +17,6 @@ import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -31,9 +29,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -73,6 +69,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
+import com.tomsksoft.videoeffectsrecorder.ui.toPx
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ExpandedTopBarMode
@@ -475,5 +472,3 @@ fun FiltersCarousel (
 	}
 
 }
-
-fun Float.toPx(): Int = (this * Resources.getSystem().displayMetrics.density).toInt()
