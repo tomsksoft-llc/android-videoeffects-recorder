@@ -2,9 +2,11 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.app.Activity
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Environment
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.CameraStoreImpl
 import com.tomsksoft.videoeffectsrecorder.data.VideoStore
@@ -18,11 +20,15 @@ import com.tomsksoft.videoeffectsrecorder.domain.usecase.FileManager
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.InputStream
 
 private const val TAG = "Camera View Model"
 
@@ -45,6 +51,9 @@ class CameraViewModel: ViewModel() {
     val frame: Observable<Bitmap> = _frame
         .map(Frame::bitmap)
         .observeOn(AndroidSchedulers.mainThread())
+
+    @Volatile
+    private var background: Bitmap? = null
 
     private lateinit var cameraStoreManager: CameraStoreManager<CameraImpl>
     private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame>
@@ -124,7 +133,8 @@ class CameraViewModel: ViewModel() {
             }
             FiltersMode.REPLACE_BACK -> {
                 Log.d(TAG, "Background mode selected")
-                backgroundMode = CameraConfig.BackgroundMode.Replace()
+                backgroundMode = background?.let(CameraConfig.BackgroundMode::Replace)
+                    ?: CameraConfig.BackgroundMode.Remove
             }
             FiltersMode.BEAUTIFY -> {
                 Log.d(TAG, "Beatify mode selected")
@@ -152,6 +162,24 @@ class CameraViewModel: ViewModel() {
 
     }
 
+    fun setBackground(bitmapStream: InputStream) { // TODO [tva] add bitmap property to UiState
+        viewModelScope.launch {
+            background = withContext(Dispatchers.IO) {
+                bitmapStream.use(BitmapFactory::decodeStream)
+            }
+            if (_cameraUiState.value.filtersMode == FiltersMode.REPLACE_BACK)
+                cameraEffectsManager.config = cameraEffectsManager.config.copy(
+                    backgroundMode = CameraConfig.BackgroundMode.Replace(background!!)
+                )
+        }
+    }
+
+    fun removeBackground() {
+        background = null
+        cameraEffectsManager.config = cameraEffectsManager.config.copy(
+            backgroundMode = CameraConfig.BackgroundMode.Remove
+        )
+    }
 
     fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode){
         _cameraUiState.update {cameraUiState ->

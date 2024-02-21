@@ -1,5 +1,7 @@
 package com.tomsksoft.videoeffectsrecorder.domain
 
+import android.graphics.Bitmap
+
 /**
  * @param smartZoom auto-framing, set null to disable
  * @param beautification set null to disable
@@ -20,9 +22,9 @@ data class CameraConfig(
     sealed interface BackgroundMode {
         object Regular: BackgroundMode
 
-        // object Remove: BackgroundMode
+        object Remove: BackgroundMode
 
-        class Replace: BackgroundMode // TODO [tva] store background image or video
+        class Replace(val bitmap: Bitmap): BackgroundMode
 
         data class Blur(val power: Double): BackgroundMode {
             init {
