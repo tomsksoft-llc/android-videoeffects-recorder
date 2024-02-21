@@ -3,7 +3,11 @@ package com.tomsksoft.videoeffectsrecorder.domain
 import io.reactivex.rxjava3.subjects.Subject
 import java.io.File
 
-interface VideoRecorder<F: Any>: FrameProvider<F> {
+/**
+ * @param F frame
+ * @param T file
+ */
+interface VideoRecorder<F: Any, T>: FrameProvider<F> {
 
     override val frame: Subject<F>
     override val degree: Subject<Int>
@@ -11,7 +15,7 @@ interface VideoRecorder<F: Any>: FrameProvider<F> {
     /**
      * Record will be stopped after {@link java.lang.AutoCloseable#close()} invocation
      */
-    fun startRecord(outputFile: File): Record
+    fun startRecord(outputFile: T): Record
 
     interface Record: AutoCloseable
 }

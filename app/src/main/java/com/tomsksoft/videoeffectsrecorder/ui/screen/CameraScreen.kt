@@ -88,9 +88,9 @@ fun CameraScreen() {
 		permissions = mutableListOf(
 			Manifest.permission.CAMERA,
 			Manifest.permission.RECORD_AUDIO
-		).also { permissions -> // TODO [tva] check for 13 Android
-			// up to Android 12 inclusive (32 API)
-			if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2)
+		).also { permissions ->
+			// direct access to file system up to 9 Android; since 10 MediaStore is used
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
 				permissions.addAll(listOf(
 					Manifest.permission.WRITE_EXTERNAL_STORAGE,
 					Manifest.permission.READ_EXTERNAL_STORAGE

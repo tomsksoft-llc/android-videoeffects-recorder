@@ -1,15 +1,20 @@
 package com.tomsksoft.videoeffectsrecorder.domain.usecase
 
-import android.util.Log
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.FileStore
 import com.tomsksoft.videoeffectsrecorder.domain.FrameProvider
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
 import io.reactivex.rxjava3.core.Observable
 
-class CameraRecordManager<T: Camera<F>, F: Any>(
-    camera: T,
-    private val fileManager: FileManager,
-    private val videoRecorder: VideoRecorder<F>
+/**
+ * @param C camera
+ * @param F frame
+ * @param T file
+ */
+class CameraRecordManager<C: Camera<F>, F: Any, T>(
+    camera: C,
+    private val fileStore: FileStore<T>,
+    private val videoRecorder: VideoRecorder<F, T>
 ): FrameProvider<F> {
     companion object {
         const val BASE_NAME = "effects"
@@ -19,7 +24,7 @@ class CameraRecordManager<T: Camera<F>, F: Any>(
 
     private var record: VideoRecorder.Record? = null
 
-    var camera: T = camera
+    var camera: C = camera
         set(value) {
             field = value
             frame.subscribe(videoRecorder.frame)
@@ -42,8 +47,8 @@ class CameraRecordManager<T: Camera<F>, F: Any>(
         }
 
     private fun startRecord() {
-        val fileDescriptor = fileManager.create(BASE_NAME, EXTENSION, MIME_TYPE)
-        record = videoRecorder.startRecord(fileDescriptor)
+        val outputFile = fileStore.create(BASE_NAME, EXTENSION, MIME_TYPE)
+        record = videoRecorder.startRecord(outputFile)
     }
 
     private fun stopRecord() {

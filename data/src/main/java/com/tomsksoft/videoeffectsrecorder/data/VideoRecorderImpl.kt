@@ -7,6 +7,7 @@ import android.media.MediaRecorder
 import android.os.Build
 import android.util.Log
 import android.os.Environment
+import android.os.ParcelFileDescriptor
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
 import io.reactivex.rxjava3.disposables.Disposable
@@ -18,7 +19,7 @@ import java.io.FileDescriptor
 
 
 @SuppressLint("CheckResult")
-class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
+class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame, ParcelFileDescriptor> {
 
     override val frame: Subject<Frame> = BehaviorSubject.create()
     override val degree: Subject<Int> = BehaviorSubject.create()
@@ -32,9 +33,11 @@ class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
         }
     }
 
-    override fun startRecord(outputFile: File): VideoRecorder.Record = RecordImpl(outputFile)
+    override fun startRecord(outputFile: ParcelFileDescriptor): VideoRecorder.Record = RecordImpl(outputFile)
 
-    private inner class RecordImpl(private val outputFile: File): VideoRecorder.Record {
+    private inner class RecordImpl(
+        private val outputFile: ParcelFileDescriptor
+    ): VideoRecorder.Record {
 
         private val mediaRecorder = (
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
@@ -64,6 +67,7 @@ class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
             disposableFrameSubscription?.dispose()
             mediaRecorder.stop()
             mediaRecorder.release()
+            outputFile.close()
         }
 
         private fun start(width: Int, height: Int) {
@@ -83,7 +87,7 @@ class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame> {
                 setVideoSize(width, height)
 
                 setOrientationHint((360 - (cachedDegree ?: 0)) % 360)
-                setOutputFile(outputFile)
+                setOutputFile(outputFile.fileDescriptor)
 
                 prepare()
                 start()
