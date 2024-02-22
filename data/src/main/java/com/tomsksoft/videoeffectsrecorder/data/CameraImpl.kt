@@ -46,8 +46,12 @@ class CameraImpl(
     override fun configure(config: CameraConfig) = pipeline.run {
         /* Background Mode */
         when (config.backgroundMode) {
-            is CameraConfig.BackgroundMode.Regular,
-            is CameraConfig.BackgroundMode.Replace -> setMode(PipelineMode.NO_EFFECT) // TODO [tva] background replace mode
+            is CameraConfig.BackgroundMode.Regular -> setMode(PipelineMode.NO_EFFECT)
+            is CameraConfig.BackgroundMode.Remove -> setMode(PipelineMode.REMOVE)
+            is CameraConfig.BackgroundMode.Replace -> {
+                setMode(PipelineMode.REPLACE)
+                setBackground((config.backgroundMode as CameraConfig.BackgroundMode.Replace).bitmap)
+            }
             is CameraConfig.BackgroundMode.Blur -> {
                 setMode(PipelineMode.BLUR)
                 setBlurPower((config.backgroundMode as CameraConfig.BackgroundMode.Blur).power)

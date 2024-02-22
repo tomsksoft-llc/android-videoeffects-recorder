@@ -3,8 +3,12 @@ package com.tomsksoft.videoeffectsrecorder.ui.screen
 import android.Manifest
 import android.graphics.Bitmap
 import android.os.Build
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -32,6 +36,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +48,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -53,6 +59,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
@@ -62,7 +69,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -78,9 +84,8 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
 import kotlinx.coroutines.launch
 
-
+// TODO [tva] preview has broken because of ComponentActivity reference
 @OptIn(ExperimentalPermissionsApi::class)
-@Preview(widthDp = 450, heightDp = 800, showBackground = true)
 @Composable
 fun CameraScreen() {
 	val activity = LocalContext.current as ComponentActivity
@@ -88,14 +93,19 @@ fun CameraScreen() {
 	val frame by viewModel.frame.subscribeAsState(null)
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
-
-	val permissions = rememberMultiplePermissionsState(
+	val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+		if (uri != null)
+			viewModel.setBackground(
+				activity.contentResolver.openInputStream(uri)!!
+			) // TODO [tva] check on Android 9 or below
+	}
+	val permissionsLauncher = rememberMultiplePermissionsState(
 		permissions = mutableListOf(
 			Manifest.permission.CAMERA,
 			Manifest.permission.RECORD_AUDIO
-		).also { permissions -> // TODO [tva] check for 13 Android
-			// up to Android 12 inclusive (32 API)
-			if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2)
+		).also { permissions ->
+			// direct access to file system up to 9 Android; since 10 MediaStore is used
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
 				permissions.addAll(listOf(
 					Manifest.permission.WRITE_EXTERNAL_STORAGE,
 					Manifest.permission.READ_EXTERNAL_STORAGE
@@ -108,7 +118,14 @@ fun CameraScreen() {
 		}
 		viewModel.initializeCamera(activity) // all are granted
 	}
-	LaunchedEffect(Unit) { permissions.launchMultiplePermissionRequest() }
+	LaunchedEffect(Unit) { permissionsLauncher.launchMultiplePermissionRequest() }
+
+	// keep screen on
+	DisposableEffect(Unit) {
+		val window = activity.window
+		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+		onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+	}
 
 	if(!cameraUiState.isCameraInitialized){
 		Column(
@@ -141,11 +158,38 @@ fun CameraScreen() {
 					viewModel::setFlash,
 					viewModel::setSecondaryFilters,
 				)
-				Box(modifier = Modifier.weight(1f)) {
+				Box(
+					modifier = Modifier
+						.fillMaxWidth()
+						.weight(1f)
+				) {
 					CameraSnackbar(
 						snackbarHostState = snackbarHostState,
 						modifier = Modifier.align(Alignment.BottomCenter)
 					)
+					// TODO [tva] other secondary controls also can be placed here
+					if (cameraUiState.primaryFiltersMode == PrimaryFiltersMode.REPLACE_BACK) {
+						RoundedButton(
+							painter = painterResource(R.drawable.ic_photo),
+							modifier = Modifier
+								.padding(24.dp)
+								.align(Alignment.BottomStart),
+							onClick = {
+								photoPickerLauncher.launch(
+									PickVisualMediaRequest(
+										ActivityResultContracts.PickVisualMedia.ImageOnly
+									)
+								)
+							}
+						)
+						RoundedButton(
+							painter = painterResource(R.drawable.ic_clear),
+							modifier = Modifier
+								.padding(24.dp)
+								.align(Alignment.BottomEnd),
+							onClick = viewModel::removeBackground
+						)
+					}
 				}
 				BottomBar(
 					cameraUiState = cameraUiState,
@@ -167,6 +211,32 @@ private fun ImageButton(painter: Painter, onClick: () -> Unit, tint: Color = Mat
 			painter = painter,
 			contentDescription = null,
 			tint = tint
+		)
+	}
+}
+
+/**
+ * Small floating semi transparent icon button
+ */
+@Composable
+private fun RoundedButton(
+	painter: Painter,
+	onClick: () -> Unit,
+	modifier: Modifier = Modifier
+) {
+	IconButton(
+		onClick = onClick,
+		modifier = modifier
+			.alpha(0.75f)
+	) {
+		Icon(
+			painter = painter,
+			contentDescription = null,
+			tint = MaterialTheme.colorScheme.surfaceDim,
+			modifier = Modifier
+				.size(48.dp)
+				.background(MaterialTheme.colorScheme.surface, RoundedCornerShape(1f))
+				.padding(4.dp)
 		)
 	}
 }
@@ -286,7 +356,6 @@ private fun TopBar(
 	}
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BottomBar(
 	cameraUiState: CameraUiState,
@@ -389,6 +458,7 @@ private fun FlipCameraButton(
 ) {
 	IconButton(
 		onClick = onClick,
+		modifier = modifier
 	) {
 		Icon(
 			imageVector = Icons.Filled.Refresh,

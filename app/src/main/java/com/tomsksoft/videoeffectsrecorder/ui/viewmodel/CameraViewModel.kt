@@ -2,9 +2,11 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.app.Activity
 import android.graphics.Bitmap
-import android.os.Environment
+import android.graphics.BitmapFactory
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.CameraStoreImpl
 import com.tomsksoft.videoeffectsrecorder.data.VideoStore
@@ -14,15 +16,17 @@ import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraStoreManager
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.FileManager
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import java.io.File
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.InputStream
 
 private const val TAG = "Camera View Model"
 
@@ -55,8 +59,11 @@ class CameraViewModel: ViewModel() {
         colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
     )
 
+    @Volatile
+    private var background: Bitmap? = null
+
     private lateinit var cameraStoreManager: CameraStoreManager<CameraImpl>
-    private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame>
+    private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame, ParcelFileDescriptor>
     private lateinit var cameraEffectsManager: CameraEffectsManager<CameraImpl>
 
     /**
@@ -76,15 +83,11 @@ class CameraViewModel: ViewModel() {
     private lateinit var camera: CameraImpl
 
     fun initializeCamera(context: Activity) {
-        val recordsDir = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-            RECORDS_DIRECTORY
-        )
         cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
         camera = selectCamera()
         cameraRecordManager = CameraRecordManager(
             camera,
-            FileManager(VideoStore(recordsDir)),
+            VideoStore(context.applicationContext, RECORDS_DIRECTORY),
             VideoRecorderImpl(context.applicationContext)
         )
         cameraEffectsManager = CameraEffectsManager(
@@ -129,7 +132,8 @@ class CameraViewModel: ViewModel() {
             }
             PrimaryFiltersMode.REPLACE_BACK -> {
                 Log.d(TAG, "Background mode selected")
-                cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Replace()
+                cameraConfigData.backgroundMode = background?.let(CameraConfig.BackgroundMode::Replace)
+                    ?: CameraConfig.BackgroundMode.Remove
                 cameraConfigData.colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
             }
             PrimaryFiltersMode.COLOR_CORRECTION -> {
@@ -191,6 +195,24 @@ class CameraViewModel: ViewModel() {
             smartZoom = cameraConfigData.smartZoom,
             beautification = cameraConfigData.beautification,
             colorCorrection = cameraConfigData.colorCorrection
+        )
+    }
+    fun setBackground(bitmapStream: InputStream) { // TODO [tva] add bitmap property to UiState
+        viewModelScope.launch {
+            background = withContext(Dispatchers.IO) {
+                bitmapStream.use(BitmapFactory::decodeStream)
+            }
+            if (_cameraUiState.value.primaryFiltersMode == PrimaryFiltersMode.REPLACE_BACK)
+                cameraEffectsManager.config = cameraEffectsManager.config.copy(
+                    backgroundMode = CameraConfig.BackgroundMode.Replace(background!!)
+                )
+        }
+    }
+
+    fun removeBackground() {
+        background = null
+        cameraEffectsManager.config = cameraEffectsManager.config.copy(
+            backgroundMode = CameraConfig.BackgroundMode.Remove
         )
     }
 
