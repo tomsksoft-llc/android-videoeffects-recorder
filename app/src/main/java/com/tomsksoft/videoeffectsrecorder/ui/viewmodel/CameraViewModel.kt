@@ -51,13 +51,12 @@ class CameraViewModel: ViewModel() {
 
     private val cameraConfigData = CameraConfigData(
         backgroundMode = CameraConfig.BackgroundMode.Regular,
+        background = null,
+        blur = 1.0,
         smartZoom = null,
         beautification = null,
         colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
     )
-
-    @Volatile
-    private var background: Bitmap? = null
 
     private lateinit var cameraRecordManager: CameraRecordManager<Frame>
     private lateinit var camera: CameraImpl
@@ -97,13 +96,18 @@ class CameraViewModel: ViewModel() {
             //primary options
             PrimaryFiltersMode.BLUR -> {
                 Log.d(TAG, "Blur mode selected")
-                cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Blur(0.5)  // TODO [fmv] add an appropriate way to change blur power
+                cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Blur // TODO [fmv] add an appropriate way to change blur power
                 cameraConfigData.colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
             }
             PrimaryFiltersMode.REPLACE_BACK -> {
                 Log.d(TAG, "Background mode selected")
-                cameraConfigData.backgroundMode = background?.let(CameraConfig.BackgroundMode::Replace)
-                    ?: CameraConfig.BackgroundMode.Remove
+
+                cameraConfigData.backgroundMode =
+                    if (cameraConfigData.background == null)
+                        CameraConfig.BackgroundMode.Remove
+                    else
+                        CameraConfig.BackgroundMode.Replace
+
                 cameraConfigData.colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
             }
             PrimaryFiltersMode.COLOR_CORRECTION -> {
@@ -128,7 +132,7 @@ class CameraViewModel: ViewModel() {
                     cameraConfigData.beautification = null
                 } else {
                     Log.d(TAG, "Beatify mode enabled")
-                    cameraConfigData.beautification = CameraConfig.Beautification(30) // TODO [fmv] add an appropriate way to change beautification power
+                    cameraConfigData.beautification = 30 // TODO [fmv] add an appropriate way to change beautification power
                 }
 
                 _cameraUiState.update { cameraUiState ->
@@ -144,7 +148,7 @@ class CameraViewModel: ViewModel() {
                     cameraConfigData.smartZoom = null
                 } else {
                     Log.d(TAG, "Smart Zoom mode enabled")
-                    cameraConfigData.smartZoom = CameraConfig.SmartZoom(80) // TODO [fmv] add an appropriate way to change beautification power
+                    cameraConfigData.smartZoom = 80 // TODO [fmv] add an appropriate way to change beautification power
                 }
                 _cameraUiState.update { cameraUiState ->
                     cameraUiState.copy(
@@ -156,22 +160,22 @@ class CameraViewModel: ViewModel() {
         updateCameraConfig()
     }
 
-    fun setBackground(bitmapStream: InputStream) { // TODO [tva] add bitmap property to UiState
+    fun setBackground(bitmapStream: InputStream) {
         viewModelScope.launch {
-            background = withContext(Dispatchers.IO) {
+            val background = withContext(Dispatchers.IO) {
                 bitmapStream.use(BitmapFactory::decodeStream)
             }
             if (_cameraUiState.value.primaryFiltersMode == PrimaryFiltersMode.REPLACE_BACK)
                 withContext(Dispatchers.Main) {
-                    cameraConfigData.backgroundMode =
-                        CameraConfig.BackgroundMode.Replace(background!!)
+                    cameraConfigData.background = background
+                    cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Replace
                     updateCameraConfig()
                 }
         }
     }
 
     fun removeBackground() {
-        background = null
+        cameraConfigData.background = null
         cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Remove
         updateCameraConfig()
     }
@@ -221,17 +225,21 @@ class CameraViewModel: ViewModel() {
 
     private fun updateCameraConfig() = camera.configure(
         CameraConfig(
-            backgroundMode = cameraConfigData.backgroundMode,
-            smartZoom = cameraConfigData.smartZoom,
-            beautification = cameraConfigData.beautification,
-            colorCorrection = cameraConfigData.colorCorrection
+            cameraConfigData.backgroundMode,
+            cameraConfigData.background,
+            cameraConfigData.blur,
+            cameraConfigData.smartZoom,
+            cameraConfigData.beautification,
+            cameraConfigData.colorCorrection
         )
     )
 }
 
 data class CameraConfigData(
     var backgroundMode: CameraConfig.BackgroundMode,
-    var smartZoom: CameraConfig.SmartZoom?,
-    var beautification: CameraConfig.Beautification?,
+    var background: Bitmap?,
+    var blur: Double,
+    var smartZoom: Int?,
+    var beautification: Int?,
     var colorCorrection: CameraConfig.ColorCorrection
 )

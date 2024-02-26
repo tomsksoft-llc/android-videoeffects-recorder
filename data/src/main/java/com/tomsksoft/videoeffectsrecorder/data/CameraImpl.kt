@@ -85,23 +85,23 @@ class CameraImpl(
         pipeline.run {
             /* Background Mode */
             when (config.backgroundMode) {
-                is CameraConfig.BackgroundMode.Regular -> setMode(PipelineMode.NO_EFFECT)
-                is CameraConfig.BackgroundMode.Remove -> setMode(PipelineMode.REMOVE)
-                is CameraConfig.BackgroundMode.Replace -> {
+                CameraConfig.BackgroundMode.Regular -> setMode(PipelineMode.NO_EFFECT)
+                CameraConfig.BackgroundMode.Remove -> setMode(PipelineMode.REMOVE)
+                CameraConfig.BackgroundMode.Replace -> {
                     setMode(PipelineMode.REPLACE)
-                    setBackground((config.backgroundMode as CameraConfig.BackgroundMode.Replace).bitmap)
+                    setBackground(config.background as Bitmap)
                 }
-                is CameraConfig.BackgroundMode.Blur -> {
+                CameraConfig.BackgroundMode.Blur -> {
                     setMode(PipelineMode.BLUR)
-                    setBlurPower((config.backgroundMode as CameraConfig.BackgroundMode.Blur).power)
+                    setBlurPower(config.blurPower)
                 }
             }
             /* Smart Zoom */
-            setZoomLevel(config.smartZoom?.faceSize ?: 0)
+            setZoomLevel(config.smartZoom ?: 0)
             /* Beautification */
             if (config.beautification != null) {
                 enableBeautification(true)
-                setBeautificationPower(config.beautification!!.power)
+                setBeautificationPower(config.beautification!!)
             } else enableBeautification(false)
             /* Color Correction */
             setColorCorrectionMode(when (config.colorCorrection) {
