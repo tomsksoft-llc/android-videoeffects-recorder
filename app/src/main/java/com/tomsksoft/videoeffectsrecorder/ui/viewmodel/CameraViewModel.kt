@@ -12,8 +12,7 @@ import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.Frame
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
+import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
@@ -61,7 +60,6 @@ class CameraViewModel: ViewModel() {
     private var background: Bitmap? = null
 
     private lateinit var cameraRecordManager: CameraRecordManager<Frame>
-    private lateinit var cameraEffectsManager: CameraEffectsManager<CameraImpl>
     private lateinit var camera: CameraImpl
 
     fun initializeCamera(lifecycleOwner: LifecycleOwner, context: Activity) {
@@ -71,17 +69,8 @@ class CameraViewModel: ViewModel() {
             camera,
             VideoRecorderImpl(context.applicationContext, RECORDS_DIRECTORY)
         )
-        cameraEffectsManager = CameraEffectsManager(
-            camera,
-            CameraConfig(
-                cameraConfigData.backgroundMode,
-                cameraConfigData.smartZoom,
-                cameraConfigData.beautification,
-                cameraConfigData.colorCorrection
-            )
-        )
+        updateCameraConfig()
         camera.isEnabled = true
-
         _cameraUiState.update {cameraUiState ->
             cameraUiState.copy(
                 isCameraInitialized = true
@@ -128,13 +117,7 @@ class CameraViewModel: ViewModel() {
                 Log.d(TAG, "NO mode selected")
             }
         }
-
-        cameraEffectsManager.config = CameraConfig(
-            backgroundMode = cameraConfigData.backgroundMode,
-            smartZoom = cameraConfigData.smartZoom,
-            beautification = cameraConfigData.beautification,
-            colorCorrection = cameraConfigData.colorCorrection
-        )
+        updateCameraConfig()
     }
 
     fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) {
@@ -170,13 +153,7 @@ class CameraViewModel: ViewModel() {
                 }
             }
         }
-
-        cameraEffectsManager.config = CameraConfig(
-            backgroundMode = cameraConfigData.backgroundMode,
-            smartZoom = cameraConfigData.smartZoom,
-            beautification = cameraConfigData.beautification,
-            colorCorrection = cameraConfigData.colorCorrection
-        )
+        updateCameraConfig()
     }
 
     fun setBackground(bitmapStream: InputStream) { // TODO [tva] add bitmap property to UiState
@@ -185,17 +162,18 @@ class CameraViewModel: ViewModel() {
                 bitmapStream.use(BitmapFactory::decodeStream)
             }
             if (_cameraUiState.value.primaryFiltersMode == PrimaryFiltersMode.REPLACE_BACK)
-                cameraEffectsManager.config = cameraEffectsManager.config.copy(
-                    backgroundMode = CameraConfig.BackgroundMode.Replace(background!!)
-                )
+                withContext(Dispatchers.Main) {
+                    cameraConfigData.backgroundMode =
+                        CameraConfig.BackgroundMode.Replace(background!!)
+                    updateCameraConfig()
+                }
         }
     }
 
     fun removeBackground() {
         background = null
-        cameraEffectsManager.config = cameraEffectsManager.config.copy(
-            backgroundMode = CameraConfig.BackgroundMode.Remove
-        )
+        cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Remove
+        updateCameraConfig()
     }
 
     fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode){
@@ -204,7 +182,6 @@ class CameraViewModel: ViewModel() {
                 expandedTopBarMode = expandedTopBarMode
             )
         }
-
     }
 
     fun flipCamera(){
@@ -241,6 +218,15 @@ class CameraViewModel: ViewModel() {
         Log.d(TAG, "Stop recording")
         cameraRecordManager.isRecording = false
     }
+
+    private fun updateCameraConfig() = camera.configure(
+        CameraConfig(
+            backgroundMode = cameraConfigData.backgroundMode,
+            smartZoom = cameraConfigData.smartZoom,
+            beautification = cameraConfigData.beautification,
+            colorCorrection = cameraConfigData.colorCorrection
+        )
+    )
 }
 
 data class CameraConfigData(
