@@ -2,6 +2,7 @@ package com.tomsksoft.videoeffectsrecorder.data
 
 import android.app.Activity
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageAnalysis.Analyzer
@@ -119,15 +120,17 @@ class CameraImpl(
             return
         }
 
-        var bitmap = image.toBitmap() // CameraX frame is always landscape
-        bitmap = Bitmap.createBitmap( // rotate to portrait orientation
-            bitmap,
-            0, 0, bitmap.width, bitmap.height,
-            rotationMatrix(
-                image.imageInfo.rotationDegrees.toFloat(),
-                0.5f, 0.5f
-            ), true
+        val matrix = Matrix().apply {
+            preRotate(image.imageInfo.rotationDegrees.toFloat(), 0.5f, 0.5f)
+            if (cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA) // mirror front camera
+                postScale(-1f, 1f)
+        }
+
+        var bitmap = image.toBitmap()
+        bitmap = Bitmap.createBitmap( // CameraX frame is always landscape, so rotate it to portrait
+            bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
         )
+
         pipeline.process(
             frameFactory.createARGB(bitmap)
         )
