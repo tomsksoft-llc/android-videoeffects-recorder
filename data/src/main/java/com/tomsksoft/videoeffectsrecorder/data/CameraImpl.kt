@@ -29,12 +29,13 @@ class CameraImpl(
     companion object {
         private val frameFactory = FrameFactoryImpl()
         private val executor = Executors.newSingleThreadExecutor()
-        private val analysis = ImageAnalysis.Builder().build()
     }
 
     private val pipeline = ImagePipelineImpl.Builder()
         .setContext(context)
         .build()
+
+    private val analysis = ImageAnalysis.Builder().build()
     private lateinit var processCameraProvider: ProcessCameraProvider
 
     private val _frame = BehaviorSubject.create<Frame>().toSerialized()

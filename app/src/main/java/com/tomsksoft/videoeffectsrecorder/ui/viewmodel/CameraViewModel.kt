@@ -3,7 +3,6 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.ParcelFileDescriptor
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.lifecycle.LifecycleOwner
@@ -12,7 +11,6 @@ import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.Frame
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
-import com.tomsksoft.videoeffectsrecorder.data.VideoStore
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
@@ -53,7 +51,7 @@ class CameraViewModel: ViewModel() {
     @Volatile
     private var background: Bitmap? = null
 
-    private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame, ParcelFileDescriptor>
+    private lateinit var cameraRecordManager: CameraRecordManager<Frame>
     private lateinit var cameraEffectsManager: CameraEffectsManager<CameraImpl>
     private lateinit var camera: CameraImpl
 
@@ -62,8 +60,7 @@ class CameraViewModel: ViewModel() {
         camera.frame.subscribe(_frame)
         cameraRecordManager = CameraRecordManager(
             camera,
-            VideoStore(context.applicationContext, RECORDS_DIRECTORY),
-            VideoRecorderImpl(context.applicationContext)
+            VideoRecorderImpl(context.applicationContext, RECORDS_DIRECTORY)
         )
         cameraEffectsManager = CameraEffectsManager(
             camera,
