@@ -2,6 +2,8 @@ package com.tomsksoft.videoeffectsrecorder.data
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.graphics.Rect
 import android.media.MediaRecorder
 import android.os.Build
@@ -58,6 +60,7 @@ class VideoRecorderImpl(private val context: Context): VideoRecorder<Frame, Parc
                 val canvas = surface!!.lockCanvas(
                     Rect(0, 0, width, height)
                 ) ?: return@subscribe
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
                 canvas.drawBitmap(frame.bitmap, 0f, 0f, null)
                 surface!!.unlockCanvasAndPost(canvas)
             }

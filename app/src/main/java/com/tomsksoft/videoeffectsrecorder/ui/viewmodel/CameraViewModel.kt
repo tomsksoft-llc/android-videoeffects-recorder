@@ -3,20 +3,19 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import androidx.camera.core.CameraSelector
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
-import com.tomsksoft.videoeffectsrecorder.data.CameraStoreImpl
-import com.tomsksoft.videoeffectsrecorder.data.VideoStore
 import com.tomsksoft.videoeffectsrecorder.data.Frame
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
+import com.tomsksoft.videoeffectsrecorder.data.VideoStore
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraStoreManager
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
@@ -27,7 +26,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.io.InputStream
 
 private const val TAG = "Camera View Model"
@@ -55,29 +53,13 @@ class CameraViewModel: ViewModel() {
     @Volatile
     private var background: Bitmap? = null
 
-    private lateinit var cameraStoreManager: CameraStoreManager<CameraImpl>
     private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame, ParcelFileDescriptor>
     private lateinit var cameraEffectsManager: CameraEffectsManager<CameraImpl>
-
-    /**
-     * Camera selected from store manager.
-     * Managers will be update on camera change.
-     */
-    private var cameraIndex = 0
-        set(value) {
-            if (field == value) return
-            camera.isEnabled = false
-            field = value
-            camera = selectCamera()
-            camera.isEnabled = true
-            cameraRecordManager.camera = camera
-            cameraEffectsManager.camera = camera
-        }
     private lateinit var camera: CameraImpl
 
-    fun initializeCamera(context: Activity) {
-        cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
-        camera = selectCamera()
+    fun initializeCamera(lifecycleOwner: LifecycleOwner, context: Activity) {
+        camera = CameraImpl(lifecycleOwner, context, CameraSelector.DEFAULT_BACK_CAMERA)
+        camera.frame.subscribe(_frame)
         cameraRecordManager = CameraRecordManager(
             camera,
             VideoStore(context.applicationContext, RECORDS_DIRECTORY),
@@ -187,7 +169,11 @@ class CameraViewModel: ViewModel() {
     }
 
     fun flipCamera(){
-        cameraIndex = (cameraIndex + 1) % cameraStoreManager.camerasCount
+        camera.cameraSelector =
+            if (camera.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            else
+                CameraSelector.DEFAULT_BACK_CAMERA
     }
 
     fun captureImage(){
@@ -215,11 +201,5 @@ class CameraViewModel: ViewModel() {
         }
         Log.d(TAG, "Stop recording")
         cameraRecordManager.isRecording = false
-    }
-
-    private fun selectCamera(): CameraImpl {
-        val camera = cameraStoreManager.cameras[cameraIndex].copy()
-        camera.frame.subscribe(_frame)
-        return camera
     }
 }
