@@ -94,14 +94,14 @@ class VideoRecorderImpl(
     private inner class Record(
         private val outputFile: ParcelFileDescriptor
     ): AutoCloseable {
-
+        @Volatile
+        private var recordState: RecordState = RecordState.CREATED
         private val mediaRecorder = (
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
                     MediaRecorder()
                 else
                     MediaRecorder(context)
             )
-        @Volatile
         private var surface: Surface? = null
         private var disposableFrameSubscription: Disposable? = null
 
@@ -112,6 +112,8 @@ class VideoRecorderImpl(
                 // first frame setups MediaRecorder with appropriate video size and orientation
                 if (surface == null)
                     start(width, height)
+                if (recordState != RecordState.RECORDING)
+                    return@subscribe
                 val canvas = surface!!.lockCanvas(
                     Rect(0, 0, width, height)
                 ) ?: return@subscribe
@@ -122,13 +124,33 @@ class VideoRecorderImpl(
         }
 
         override fun close() {
-            disposableFrameSubscription?.dispose()
-            mediaRecorder.stop()
-            mediaRecorder.release()
-            outputFile.close()
+            when (recordState) {
+                RecordState.CREATED, RecordState.STOPPING -> {
+                    recordState = RecordState.STOPPED
+                    disposableFrameSubscription?.dispose()
+                    mediaRecorder.release()
+                    outputFile.close()
+                }
+
+                RecordState.STARTING -> // start() will check if STOPPING was requested
+                    recordState = RecordState.STOPPING
+
+                RecordState.RECORDING -> {
+                    recordState = RecordState.STOPPED
+                    disposableFrameSubscription?.dispose()
+                    mediaRecorder.stop()
+                    mediaRecorder.release()
+                    outputFile.close()
+                }
+
+                RecordState.STOPPED ->
+                    throw IllegalStateException("Already stopped")
+            }
         }
 
         private fun start(width: Int, height: Int) {
+            recordState = RecordState.STARTING
+
             mediaRecorder.apply { // setters order is important!
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setVideoSource(MediaRecorder.VideoSource.SURFACE)
@@ -148,9 +170,23 @@ class VideoRecorderImpl(
                 setOutputFile(outputFile.fileDescriptor)
 
                 prepare()
-                start()
             }
             surface = mediaRecorder.surface
+
+            if (recordState == RecordState.STOPPING) // cancel if stop is already requested
+                close()
+            else {
+                recordState = RecordState.RECORDING
+                mediaRecorder.start()
+            }
         }
+    }
+
+    private enum class RecordState {
+        CREATED,
+        STARTING,
+        RECORDING,
+        STOPPING,
+        STOPPED
     }
 }
