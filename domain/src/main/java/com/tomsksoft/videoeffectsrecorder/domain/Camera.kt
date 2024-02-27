@@ -1,6 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.domain
 
-interface Camera<F: Any>: FrameProvider<F> {
+interface Camera: FrameProvider {
 
     var isEnabled: Boolean
 

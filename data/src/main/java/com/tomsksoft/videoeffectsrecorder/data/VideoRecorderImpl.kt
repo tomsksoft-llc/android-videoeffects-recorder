@@ -23,9 +23,9 @@ import java.util.stream.Stream
 class VideoRecorderImpl(
     private val context: Context,
     private val directoryName: String
-): VideoRecorder<Frame> {
+): VideoRecorder {
 
-    override val frame: BehaviorSubject<Frame> = BehaviorSubject.create()
+    override val frame: BehaviorSubject<Any> = BehaviorSubject.create()
     override val degree: BehaviorSubject<Int> = BehaviorSubject.create()
 
     private val directory: File by lazy {
@@ -107,7 +107,8 @@ class VideoRecorderImpl(
 
         init {
             disposableFrameSubscription = frame.observeOn(Schedulers.io()).subscribe { frame ->
-                val (width, height) = frame.bitmap.width to frame.bitmap.height
+                val bitmap = FrameMapper.fromAny(frame)
+                val (width, height) = bitmap.width to bitmap.height
                 // first frame setups MediaRecorder with appropriate video size and orientation
                 if (surface == null)
                     start(width, height)
@@ -115,7 +116,7 @@ class VideoRecorderImpl(
                     Rect(0, 0, width, height)
                 ) ?: return@subscribe
                 canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-                canvas.drawBitmap(frame.bitmap, 0f, 0f, null)
+                canvas.drawBitmap(bitmap, 0f, 0f, null)
                 surface!!.unlockCanvasAndPost(canvas)
             }
         }
