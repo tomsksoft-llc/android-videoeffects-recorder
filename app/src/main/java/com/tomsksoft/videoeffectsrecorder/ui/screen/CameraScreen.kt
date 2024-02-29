@@ -40,9 +40,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -168,29 +171,22 @@ fun CameraScreen() {
 						snackbarHostState = snackbarHostState,
 						modifier = Modifier.align(Alignment.BottomCenter)
 					)
+
 					// TODO [tva] other secondary controls also can be placed here
-					if (cameraUiState.primaryFiltersMode == PrimaryFiltersMode.REPLACE_BACK) {
-						RoundedButton(
-							painter = painterResource(R.drawable.ic_photo),
-							modifier = Modifier
-								.padding(24.dp)
-								.align(Alignment.BottomStart),
-							onClick = {
-								photoPickerLauncher.launch(
-									PickVisualMediaRequest(
-										ActivityResultContracts.PickVisualMedia.ImageOnly
-									)
+					EffectsOptions(
+						cameraUiState = cameraUiState,
+						onPhotoPickClick = {
+							photoPickerLauncher.launch(
+								PickVisualMediaRequest(
+									ActivityResultContracts.PickVisualMedia.ImageOnly
 								)
-							}
-						)
-						RoundedButton(
-							painter = painterResource(R.drawable.ic_clear),
-							modifier = Modifier
-								.padding(24.dp)
-								.align(Alignment.BottomEnd),
-							onClick = viewModel::removeBackground
-						)
-					}
+							)
+					    },
+						onRemoveClick = viewModel::removeBackground,
+						onBlurSliderChange = viewModel::setBlurPower,
+						onBeautifySliderChange = viewModel::setBeautifyPower,
+						onSmartZoomSliderChange = viewModel::setZoomPower
+					)
 				}
 				BottomBar(
 					cameraUiState = cameraUiState,
@@ -543,3 +539,156 @@ fun FiltersCarousel (
 	}
 
 }
+
+@Composable
+private fun EffectsOptions(
+	cameraUiState: CameraUiState,
+	onPhotoPickClick: () -> Unit,
+	onRemoveClick:  () -> Unit,
+	onBlurSliderChange: (Float) -> Unit,
+	onBeautifySliderChange: (Float) -> Unit,
+	onSmartZoomSliderChange: (Float) -> Unit,
+) {
+	Box(
+		modifier = Modifier
+			.fillMaxSize()
+	) {
+		when (cameraUiState.primaryFiltersMode) {
+			PrimaryFiltersMode.REPLACE_BACK -> {
+				RoundedButton(
+					painter = painterResource(R.drawable.ic_photo),
+					modifier = Modifier
+						.padding(24.dp)
+						.align(Alignment.BottomStart),
+					onClick = onPhotoPickClick
+				)
+				RoundedButton(
+					painter = painterResource(R.drawable.ic_clear),
+					modifier = Modifier
+						.padding(24.dp)
+						.align(Alignment.BottomEnd),
+					onClick = onRemoveClick
+				)
+			}
+
+			PrimaryFiltersMode.BLUR -> {
+/*				 PowerSlider(
+					onValueChange = onBlurSliderChange,
+					sliderPosition = cameraUiState.blurPower,
+					modifier = Modifier
+						.align(Alignment.BottomCenter)
+						.padding(24.dp)
+				)*/
+				Slider(
+					value = cameraUiState.blurPower.toFloat(),
+					onValueChange = onBlurSliderChange,
+					modifier = Modifier
+						.align(Alignment.BottomCenter)
+						.padding(24.dp)
+				)
+			}
+			PrimaryFiltersMode.COLOR_CORRECTION -> {
+				Row(
+					modifier = Modifier
+						.align(Alignment.BottomCenter)
+						.fillMaxWidth(),
+					horizontalArrangement = Arrangement.SpaceBetween
+				) {
+					RoundedButton(
+						painter = painterResource(R.drawable.ic_clear),
+						onClick = { /*TODO*/ },
+						modifier = Modifier
+							.padding(24.dp)
+					)
+					RoundedButton(
+						painter = painterResource(R.drawable.ic_clear),
+						onClick = { /*TODO*/ },
+						modifier = Modifier
+							.padding(24.dp)
+					)
+					RoundedButton(
+						painter = painterResource(R.drawable.ic_clear),
+						onClick = { /*TODO*/ },
+						modifier = Modifier
+							.padding(24.dp)
+					)
+					RoundedButton(
+						painter = painterResource(R.drawable.ic_clear),
+						onClick = { /*TODO*/ },
+						modifier = Modifier
+							.padding(24.dp)
+					)
+				}
+			}
+			PrimaryFiltersMode.NONE -> {}
+		}
+		Column(
+			Modifier.align(Alignment.TopCenter)
+		) {
+			if (cameraUiState.isBeautifyEnabled) {
+				Row(
+					verticalAlignment = Alignment.CenterVertically
+				) {
+					Icon(
+						painter = painterResource(id = R.drawable.ic_filter_beautify),
+						contentDescription = null,
+						tint = Color.White,
+						modifier = Modifier
+							.weight(1f)
+							.padding(3.dp)
+					)
+					Slider(
+						onValueChange = onBeautifySliderChange,
+						value = (cameraUiState.beautifyPower/100f),//.toFloat(),
+						modifier = Modifier
+							.weight(3f)
+							.padding(3.dp)
+					)
+/*					PowerSlider(
+						onValueChange = onBeautifySliderChange,
+						sliderPosition = cameraUiState.beautifyPower.toDouble(),
+						modifier = Modifier
+							.weight(3f)
+							.padding(3.dp)
+					)*/
+				}
+			}
+			if (cameraUiState.isSmartZoomEnabled) {
+				Row(
+					verticalAlignment = Alignment.CenterVertically
+				) {
+					Icon(
+						painter = painterResource(id = R.drawable.ic_filter_smart_zoom),
+						contentDescription = null,
+						tint = Color.White,
+						modifier = Modifier
+							.weight(1f)
+							.padding(3.dp)
+					)
+					Slider(
+						value = cameraUiState.zoomPower/100f/*.toFloat()*/,
+						onValueChange = onSmartZoomSliderChange,
+						modifier = Modifier
+							.weight(3f)
+							.padding(3.dp)
+					)
+				}
+			}
+		}
+	}
+}
+/*
+
+//@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PowerSlider(
+	onValueChange: (Float) -> Unit,
+	sliderPosition: Double,
+	modifier: Modifier
+) {
+	Slider(
+		value = sliderPosition.toFloat(),
+		onValueChange = onValueChange,
+		modifier = modifier
+	)
+}*/

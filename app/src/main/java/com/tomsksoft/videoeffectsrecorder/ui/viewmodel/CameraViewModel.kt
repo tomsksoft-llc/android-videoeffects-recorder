@@ -37,6 +37,9 @@ class CameraViewModel: ViewModel() {
         flashMode = FlashMode.AUTO,
         expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
         primaryFiltersMode = PrimaryFiltersMode.NONE,
+        blurPower = 0.0,
+        zoomPower = 0,
+        beautifyPower = 0,
         isSmartZoomEnabled = false,
         isBeautifyEnabled = false,
         isVideoRecording = false,
@@ -86,7 +89,7 @@ class CameraViewModel: ViewModel() {
         // TODO [fmv]: add usecase interaction
     }
 
-    fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) {
+    fun setPrimaryFilter(filtersMode: PrimaryFiltersMode, ) {
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 primaryFiltersMode = filtersMode
@@ -96,6 +99,7 @@ class CameraViewModel: ViewModel() {
             //primary options
             PrimaryFiltersMode.BLUR -> {
                 Log.d(TAG, "Blur mode selected")
+
                 cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Blur // TODO [fmv] add an appropriate way to change blur power
                 cameraConfigData.colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
             }
@@ -223,13 +227,69 @@ class CameraViewModel: ViewModel() {
         cameraRecordManager.isRecording = false
     }
 
+    fun setBlurPower(value: Float) {
+        _cameraUiState.update {cameraUiState ->
+            cameraUiState.copy(
+                blurPower = value.toDouble()
+            )
+        }
+        camera.configure(
+            CameraConfig(
+                cameraConfigData.backgroundMode,
+                cameraConfigData.background,
+                cameraUiState.value.blurPower,
+                cameraUiState.value.zoomPower,
+                cameraUiState.value.beautifyPower,
+                cameraConfigData.colorCorrection
+            )
+        )
+    }
+
+    fun setZoomPower(value: Float) {
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                zoomPower = (value*100).toInt()
+            )
+        }
+        camera.configure(
+            CameraConfig(
+                cameraConfigData.backgroundMode,
+                cameraConfigData.background,
+                cameraUiState.value.blurPower,
+                cameraUiState.value.zoomPower,
+                cameraUiState.value.beautifyPower,
+                cameraConfigData.colorCorrection
+            )
+        )
+    }
+
+    fun setBeautifyPower(value: Float) {
+        Log.d(TAG,"ui beautify was $value")
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                beautifyPower = (value*100).toInt()
+            )
+        }
+        Log.d(TAG,"ui beautify was ${cameraUiState.value.beautifyPower}")
+        camera.configure(
+            CameraConfig(
+                cameraConfigData.backgroundMode,
+                cameraConfigData.background,
+                cameraUiState.value.blurPower,
+                cameraUiState.value.zoomPower,
+                cameraUiState.value.beautifyPower,
+                cameraConfigData.colorCorrection
+            )
+        )
+    }
+
     private fun updateCameraConfig() = camera.configure(
         CameraConfig(
             cameraConfigData.backgroundMode,
             cameraConfigData.background,
-            cameraConfigData.blur,
-            cameraConfigData.smartZoom,
-            cameraConfigData.beautification,
+            cameraUiState.value.blurPower,
+            cameraUiState.value.zoomPower,
+            cameraUiState.value.beautifyPower,
             cameraConfigData.colorCorrection
         )
     )
