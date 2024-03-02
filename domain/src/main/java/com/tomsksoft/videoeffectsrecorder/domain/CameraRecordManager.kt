@@ -1,8 +1,8 @@
 package com.tomsksoft.videoeffectsrecorder.domain
 
-class CameraRecordManager<F: Any>(
-    camera: Camera<F>,
-    private val videoRecorder: VideoRecorder<F>
+class CameraRecordManager(
+    camera: Camera,
+    private val videoRecorder: VideoRecorder
 ) {
     companion object {
         const val BASE_NAME = "effects"

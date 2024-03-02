@@ -1,11 +1,10 @@
 package com.tomsksoft.videoeffectsrecorder.domain
 
 import io.reactivex.rxjava3.subjects.Subject
-import java.io.File
 
-interface VideoRecorder<F: Any>: FrameProvider<F> {
+interface VideoRecorder: FrameProvider {
 
-    override val frame: Subject<F>
+    override val frame: Subject<Any>
     override val degree: Subject<Int>
 
     /**

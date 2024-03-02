@@ -9,7 +9,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
-import com.tomsksoft.videoeffectsrecorder.data.Frame
+import com.tomsksoft.videoeffectsrecorder.data.FrameMapper
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
@@ -44,10 +44,8 @@ class CameraViewModel: ViewModel() {
     ))
     val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
-    private val _frame = BehaviorSubject.create<Frame>()
-    val frame: Observable<Bitmap> = _frame
-        .map(Frame::bitmap)
-        .observeOn(AndroidSchedulers.mainThread())
+    private val _frame = BehaviorSubject.create<Bitmap>()
+    val frame: Observable<Bitmap> = _frame.observeOn(AndroidSchedulers.mainThread())
 
     private val cameraConfigData = CameraConfigData(
         backgroundMode = CameraConfig.BackgroundMode.Regular,
@@ -58,12 +56,14 @@ class CameraViewModel: ViewModel() {
         colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
     )
 
-    private lateinit var cameraRecordManager: CameraRecordManager<Frame>
+    private lateinit var cameraRecordManager: CameraRecordManager
     private lateinit var camera: CameraImpl
 
     fun initializeCamera(lifecycleOwner: LifecycleOwner, context: Activity) {
         camera = CameraImpl(lifecycleOwner, context, CameraSelector.DEFAULT_BACK_CAMERA)
-        camera.frame.subscribe(_frame)
+        camera.frame
+            .map(FrameMapper::fromAny)
+            .subscribe(_frame)
         cameraRecordManager = CameraRecordManager(
             camera,
             VideoRecorderImpl(context.applicationContext, RECORDS_DIRECTORY)

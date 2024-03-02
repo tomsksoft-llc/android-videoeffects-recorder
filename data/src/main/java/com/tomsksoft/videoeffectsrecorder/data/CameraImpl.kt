@@ -8,7 +8,6 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.core.graphics.rotationMatrix
 import androidx.lifecycle.LifecycleOwner
 import com.effectssdk.tsvb.frame.factory.FrameFactoryImpl
 import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
@@ -17,7 +16,6 @@ import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
 import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import java.util.concurrent.Executors
@@ -26,7 +24,7 @@ class CameraImpl(
     private val lifecycleOwner: LifecycleOwner,
     private val context: Activity,
     cameraSelector: CameraSelector
-): Camera<Frame>, Analyzer, OnFrameAvailableListener {
+): Camera, Analyzer, OnFrameAvailableListener {
     companion object {
         private val frameFactory = FrameFactoryImpl()
         private val executor = Executors.newSingleThreadExecutor()
@@ -39,13 +37,11 @@ class CameraImpl(
     private val analysis = ImageAnalysis.Builder().build()
     private lateinit var processCameraProvider: ProcessCameraProvider
 
-    private val _frame = BehaviorSubject.create<Frame>().toSerialized()
+    private val _frame = BehaviorSubject.create<Any>().toSerialized()
     private val _degree = BehaviorSubject.create<Int>().toSerialized()
 
-    override val frame: Observable<Frame>
-        get() = _frame.observeOn(Schedulers.io())
-    override val degree: Observable<Int>
-        get() = _degree.observeOn(Schedulers.io())
+    override val frame = _frame.observeOn(Schedulers.io())
+    override val degree = _degree.observeOn(Schedulers.io())
 
     var cameraSelector: CameraSelector = cameraSelector
         set(value) {
@@ -138,7 +134,9 @@ class CameraImpl(
 
     // get frame from EffectsSDK pipeline and forward it to Rx
     override fun onNewFrame(bitmap: Bitmap) {
-        _frame.onNext(Frame(bitmap))
+        _frame.onNext(
+            FrameMapper.toAny(bitmap)
+        )
     }
 
     private fun start() {
