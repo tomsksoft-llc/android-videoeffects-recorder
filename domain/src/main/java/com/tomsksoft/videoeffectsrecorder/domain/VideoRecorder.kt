@@ -10,5 +10,5 @@ interface VideoRecorder: FrameProvider {
     /**
      * Record will be stopped after {@link java.lang.AutoCloseable#close()} invocation
      */
-    fun startRecord(filename: String, extension: String, mimeType: String): AutoCloseable
+    fun startRecord(filename: String, mimeType: String): AutoCloseable
 }

@@ -19,9 +19,6 @@ import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.BehaviorSubject
-import java.io.File
-import java.util.Objects
-import java.util.stream.Stream
 
 class VideoRecorderImpl(
     private val context: Context,
@@ -34,91 +31,32 @@ class VideoRecorderImpl(
     override val frame: BehaviorSubject<Any> = BehaviorSubject.create()
     override val degree: BehaviorSubject<Int> = BehaviorSubject.create()
 
-    private val directory: File by lazy {
-        File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-            directoryName
-        ).also(File::mkdirs)
-    }
-
     private val contentResolver: ContentResolver
         get() = context.contentResolver
 
-    override fun startRecord(filename: String, extension: String, mimeType: String): AutoCloseable =
-        open(filename, extension, mimeType).let { descToFile: Pair<ParcelFileDescriptor, File> ->
-            Record(descToFile.first, descToFile.second)
-        }
-
-    private fun open(
-        filename: String,
-        extension: String,
-        mimeType: String
-    ): Pair<ParcelFileDescriptor, File> =
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-            createFile(filename, extension).let { file ->
-                ParcelFileDescriptor.open(
-                    file,
-                    ParcelFileDescriptor.MODE_WRITE_ONLY
-                ) to file
-            } else createFileDescriptor(filename, mimeType)
+    override fun startRecord(filename: String, mimeType: String): AutoCloseable {
+        val (descriptor, uri) = createFile(filename, mimeType)
+        return Record(descriptor, uri)
+    }
 
     @SuppressLint("Recycle") // ParcelFileDescriptor will be freed by Record
-    private fun createFileDescriptor(filename: String, mimeType: String): Pair<ParcelFileDescriptor, File> {
+    private fun createFile(filename: String, mimeType: String): Pair<ParcelFileDescriptor, Uri> {
         val uri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, ContentValues().apply {
             put(MediaStore.Video.Media.DATE_ADDED, System.currentTimeMillis())
             put(MediaStore.Video.Media.DISPLAY_NAME, filename)
             put(MediaStore.Video.Media.MIME_TYPE, mimeType)
             put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_DCIM}/$directoryName")
         })!! // MediaStore concerns about making dirs and providing unique filenames on its own
-        return contentResolver.openFileDescriptor(uri, "w")!! to
-                File(File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-                    directoryName
-                ), getFilename(uri))
+        return contentResolver.openFileDescriptor(uri, "w")!! to uri
     }
 
-    private fun getFilename(uri: Uri): String = contentResolver.query(
-        uri,
-        arrayOf(MediaStore.Video.Media.DISPLAY_NAME),
-        null, null
-    )!!.use { cursor ->
-        cursor.moveToFirst()
-        cursor.getString(
-            cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME)
-                .takeUnless { it == -1 }!!
-        )
-    }
-
-    private fun createFile(filename: String, extension: String): File =
-        File(directory, "$filename.$extension")
-            .takeUnless(File::exists)
-            ?: createIndexedFile(filename, extension)
-
-    private fun createIndexedFile(baseName: String, extension: String): File {
-        val sortedTakenIndices: IntArray = Stream.of(*directory.listFiles())
-            .filter { it.extension == extension }
-            .map(File::nameWithoutExtension)
-            .filter { it.startsWith("${baseName}_") }
-            .map { it.substring(baseName.length + 1).toIntOrNull() }
-            .filter(Objects::nonNull)
-            .mapToInt { it!! }
-            .filter { it >= 0 }
-            .sorted()
-            .toArray()
-
-        var minFreeIndex = 0
-
-        while (
-            minFreeIndex < sortedTakenIndices.size
-            && sortedTakenIndices[minFreeIndex] == minFreeIndex
-        ) minFreeIndex++
-
-        return File("${baseName}_$minFreeIndex.$extension")
+    private fun deleteFile(file: Uri) {
+        contentResolver.delete(file, null, null)
     }
 
     private inner class Record(
         private val parcelDescriptor: ParcelFileDescriptor,
-        private val file: File // TODO [tva] if there's a way to delete file via ParcelFileDescriptor, do so
+        private val file: Uri
     ): AutoCloseable {
         @Volatile
         private var recordState: RecordState = RecordState.IDLE
@@ -132,7 +70,6 @@ class VideoRecorderImpl(
         private var disposableFrameSubscription: Disposable? = null
 
         init {
-            Log.d(TAG, "Record output: ${file.absolutePath}")
             disposableFrameSubscription = frame.observeOn(Schedulers.io()).subscribe { frame ->
                 val bitmap = FrameMapper.fromAny(frame)
                 val (width, height) = bitmap.width to bitmap.height
@@ -176,7 +113,7 @@ class VideoRecorderImpl(
                     disposableFrameSubscription?.dispose()
                     mediaRecorder.release()
                     parcelDescriptor.close()
-                    file.delete() // video without frames would represent broken file
+                    deleteFile(file) // video without frames would represent broken file
                 }
 
                 RecordState.STOPPED ->

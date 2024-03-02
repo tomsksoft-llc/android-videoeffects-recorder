@@ -10,12 +10,6 @@
 	<uses-feature android:name="android.hardware.microphone"/>
 	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-		android:maxSdkVersion="32"
-		tools:ignore="ScopedStorage" />
-	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-		android:maxSdkVersion="32" />
-
 	<application
 		android:name = ".VideoEffectsRecorderApplication"
 		android:allowBackup = "true"
