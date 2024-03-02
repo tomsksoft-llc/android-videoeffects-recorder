@@ -2,7 +2,6 @@ package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import android.Manifest
 import android.graphics.Bitmap
-import android.os.Build
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -74,7 +73,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -107,14 +105,7 @@ fun CameraScreen() {
 		permissions = mutableListOf(
 			Manifest.permission.CAMERA,
 			Manifest.permission.RECORD_AUDIO
-		).also { permissions ->
-			// direct access to file system up to 9 Android; since 10 MediaStore is used
-			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-				permissions.addAll(listOf(
-					Manifest.permission.WRITE_EXTERNAL_STORAGE,
-					Manifest.permission.READ_EXTERNAL_STORAGE
-				))
-		}
+		)
 	) {
 		if (it.values.any { granted -> !granted }) { // any permission denied
 			Toast.makeText(activity, "No permission", Toast.LENGTH_SHORT).show()

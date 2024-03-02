@@ -6,7 +6,6 @@ class CameraRecordManager(
 ) {
     companion object {
         const val BASE_NAME = "effects"
-        const val EXTENSION = "mp4"
         const val MIME_TYPE = "video/mp4"
     }
 
@@ -25,7 +24,7 @@ class CameraRecordManager(
         }
 
     private fun startRecord() {
-        record = videoRecorder.startRecord(BASE_NAME, EXTENSION, MIME_TYPE)
+        record = videoRecorder.startRecord(BASE_NAME, MIME_TYPE)
     }
 
     private fun stopRecord() {
