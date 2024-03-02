@@ -15,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -84,7 +85,9 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ExpandedTopBarMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // TODO [tva] preview has broken because of ComponentActivity reference
 @OptIn(ExperimentalPermissionsApi::class)
@@ -149,6 +152,7 @@ fun CameraScreen() {
 
 				TopBar(
 					cameraUiState,
+					snackbarHostState,
 					viewModel::toggleQuickSettingsIndicator,
 					viewModel::setFlash,
 					viewModel::setSecondaryFilters,
@@ -163,7 +167,6 @@ fun CameraScreen() {
 						modifier = Modifier.align(Alignment.BottomCenter)
 					)
 
-					// TODO [tva] other secondary controls also can be placed here
 					EffectsOptions(
 						cameraUiState = cameraUiState,
 						onPhotoPickClick = {
@@ -269,10 +272,12 @@ private fun EffectsCameraPreview(
 @Composable
 private fun TopBar(
 	cameraUiState: CameraUiState,
+	snackbarHostState: SnackbarHostState,
 	onToggleTopBar: (ExpandedTopBarMode) -> Unit,
 	onFlashSettingClick: (FlashMode) -> Unit,
 	onFilterSettingClick: (SecondaryFiltersMode) -> Unit
 ){
+	val scope = rememberCoroutineScope()
 	Row(
 		horizontalArrangement = Arrangement.Absolute.SpaceAround,
 		modifier = Modifier
@@ -321,6 +326,11 @@ private fun TopBar(
 					painter = painterResource(id = R.drawable.ic_filter_beautify),
 					onClick = {
 						onFilterSettingClick(SecondaryFiltersMode.BEAUTIFY)
+						if (!cameraUiState.isBeautifyEnabled) {
+							scope.launch {
+								snackbarHostState.showSnackbar("Beautify enabled")
+							}
+						}
 					},
 					tint = if (cameraUiState.isBeautifyEnabled) Color.Yellow else MaterialTheme.colorScheme.onPrimary
 				)
@@ -329,6 +339,11 @@ private fun TopBar(
 					painter = painterResource(id = R.drawable.ic_filter_smart_zoom),
 					onClick = {
 						onFilterSettingClick(SecondaryFiltersMode.SMART_ZOOM)
+						if (!cameraUiState.isSmartZoomEnabled) {
+							scope.launch {
+								snackbarHostState.showSnackbar("Smart Zoom enabled")
+							}
+						}
 					},
 					tint = if (cameraUiState.isSmartZoomEnabled) Color.Yellow else MaterialTheme.colorScheme.onPrimary
 				)
@@ -353,12 +368,12 @@ private fun BottomBar(
 	onRelease: () -> Unit,
 	onFilterSettingClick: (PrimaryFiltersMode) -> Unit
 ) {
-	// 3-segmented row to keep camera button always centered
 	Column {
 		FiltersCarousel(
 			primaryFiltersModeSelected = cameraUiState.primaryFiltersMode,
 			onFilterSelected = onFilterSettingClick
 		)
+		// 3-segmented row to keep camera button always centered
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()
@@ -496,6 +511,7 @@ fun FiltersCarousel (
 	val snappingLayout = remember(carouselState) { SnapLayoutInfoProvider(carouselState) }
 	val snapFlingBehavior : FlingBehavior = rememberSnapFlingBehavior(snappingLayout)
 
+
 	// TODO [fmv] snap initial item to the center of the screen
 
 	// TODO [fmv] add ability to launch filter selection callback at the end of the snapping animation
@@ -563,13 +579,6 @@ private fun EffectsOptions(
 			}
 
 			PrimaryFiltersMode.BLUR -> {
-/*				 PowerSlider(
-					onValueChange = onBlurSliderChange,
-					sliderPosition = cameraUiState.blurPower,
-					modifier = Modifier
-						.align(Alignment.BottomCenter)
-						.padding(24.dp)
-				)*/
 				Slider(
 					value = cameraUiState.blurPower.toFloat(),
 					onValueChange = onBlurSliderChange,
@@ -585,30 +594,30 @@ private fun EffectsOptions(
 						.fillMaxWidth(),
 					horizontalArrangement = Arrangement.SpaceBetween
 				) {
-					RoundedButton(
+					/*RoundedButton(
 						painter = painterResource(R.drawable.ic_clear),
-						onClick = { /*TODO*/ },
+						onClick = { *//*TODO*//* },
 						modifier = Modifier
 							.padding(24.dp)
 					)
 					RoundedButton(
 						painter = painterResource(R.drawable.ic_clear),
-						onClick = { /*TODO*/ },
+						onClick = { *//*TODO*//* },
 						modifier = Modifier
 							.padding(24.dp)
 					)
 					RoundedButton(
 						painter = painterResource(R.drawable.ic_clear),
-						onClick = { /*TODO*/ },
+						onClick = { *//*TODO*//* },
 						modifier = Modifier
 							.padding(24.dp)
 					)
 					RoundedButton(
 						painter = painterResource(R.drawable.ic_clear),
-						onClick = { /*TODO*/ },
+						onClick = { *//*TODO*//* },
 						modifier = Modifier
 							.padding(24.dp)
-					)
+					)*/
 				}
 			}
 			PrimaryFiltersMode.NONE -> {}
@@ -635,13 +644,6 @@ private fun EffectsOptions(
 							.weight(3f)
 							.padding(3.dp)
 					)
-/*					PowerSlider(
-						onValueChange = onBeautifySliderChange,
-						sliderPosition = cameraUiState.beautifyPower.toDouble(),
-						modifier = Modifier
-							.weight(3f)
-							.padding(3.dp)
-					)*/
 				}
 			}
 			if (cameraUiState.isSmartZoomEnabled) {
@@ -668,18 +670,3 @@ private fun EffectsOptions(
 		}
 	}
 }
-/*
-
-//@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PowerSlider(
-	onValueChange: (Float) -> Unit,
-	sliderPosition: Double,
-	modifier: Modifier
-) {
-	Slider(
-		value = sliderPosition.toFloat(),
-		onValueChange = onValueChange,
-		modifier = modifier
-	)
-}*/

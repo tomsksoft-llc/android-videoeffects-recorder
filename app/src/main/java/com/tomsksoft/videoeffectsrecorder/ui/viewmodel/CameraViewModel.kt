@@ -100,7 +100,7 @@ class CameraViewModel: ViewModel() {
             PrimaryFiltersMode.BLUR -> {
                 Log.d(TAG, "Blur mode selected")
 
-                cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Blur // TODO [fmv] add an appropriate way to change blur power
+                cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Blur
                 cameraConfigData.colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
             }
             PrimaryFiltersMode.REPLACE_BACK -> {
@@ -131,14 +131,14 @@ class CameraViewModel: ViewModel() {
     fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) {
         when (filtersMode) {
             SecondaryFiltersMode.BEAUTIFY -> {
-                if (cameraConfigData.beautification != null) {
+                //val power: Int
+                cameraConfigData.beautification = if (cameraUiState.value.isBeautifyEnabled) {
                     Log.d(TAG, "Beatify mode disabled")
-                    cameraConfigData.beautification = null
+                    0
                 } else {
                     Log.d(TAG, "Beatify mode enabled")
-                    cameraConfigData.beautification = 30 // TODO [fmv] add an appropriate way to change beautification power
+                    cameraUiState.value.beautifyPower
                 }
-
                 _cameraUiState.update { cameraUiState ->
                     cameraUiState.copy(
                         isBeautifyEnabled = !cameraUiState.isBeautifyEnabled
@@ -147,12 +147,12 @@ class CameraViewModel: ViewModel() {
             }
 
             SecondaryFiltersMode.SMART_ZOOM -> {
-                if (cameraConfigData.smartZoom != null) {
+                cameraConfigData.smartZoom = if (cameraUiState.value.isBeautifyEnabled) {
                     Log.d(TAG, "Smart Zoom mode disabled")
-                    cameraConfigData.smartZoom = null
+                    0
                 } else {
                     Log.d(TAG, "Smart Zoom mode enabled")
-                    cameraConfigData.smartZoom = 80 // TODO [fmv] add an appropriate way to change beautification power
+                    cameraUiState.value.beautifyPower
                 }
                 _cameraUiState.update { cameraUiState ->
                     cameraUiState.copy(
@@ -233,16 +233,8 @@ class CameraViewModel: ViewModel() {
                 blurPower = value.toDouble()
             )
         }
-        camera.configure(
-            CameraConfig(
-                cameraConfigData.backgroundMode,
-                cameraConfigData.background,
-                cameraUiState.value.blurPower,
-                cameraUiState.value.zoomPower,
-                cameraUiState.value.beautifyPower,
-                cameraConfigData.colorCorrection
-            )
-        )
+        cameraConfigData.blur = cameraUiState.value.blurPower
+        updateCameraConfig()
     }
 
     fun setZoomPower(value: Float) {
@@ -251,16 +243,8 @@ class CameraViewModel: ViewModel() {
                 zoomPower = (value*100).toInt()
             )
         }
-        camera.configure(
-            CameraConfig(
-                cameraConfigData.backgroundMode,
-                cameraConfigData.background,
-                cameraUiState.value.blurPower,
-                cameraUiState.value.zoomPower,
-                cameraUiState.value.beautifyPower,
-                cameraConfigData.colorCorrection
-            )
-        )
+        cameraConfigData.smartZoom = cameraUiState.value.zoomPower
+        updateCameraConfig()
     }
 
     fun setBeautifyPower(value: Float) {
@@ -270,26 +254,17 @@ class CameraViewModel: ViewModel() {
                 beautifyPower = (value*100).toInt()
             )
         }
-        Log.d(TAG,"ui beautify was ${cameraUiState.value.beautifyPower}")
-        camera.configure(
-            CameraConfig(
-                cameraConfigData.backgroundMode,
-                cameraConfigData.background,
-                cameraUiState.value.blurPower,
-                cameraUiState.value.zoomPower,
-                cameraUiState.value.beautifyPower,
-                cameraConfigData.colorCorrection
-            )
-        )
+        cameraConfigData.beautification = cameraUiState.value.beautifyPower
+        updateCameraConfig()
     }
 
     private fun updateCameraConfig() = camera.configure(
         CameraConfig(
             cameraConfigData.backgroundMode,
             cameraConfigData.background,
-            cameraUiState.value.blurPower,
-            cameraUiState.value.zoomPower,
-            cameraUiState.value.beautifyPower,
+            cameraConfigData.blur,
+            cameraConfigData.smartZoom,
+            cameraConfigData.beautification,
             cameraConfigData.colorCorrection
         )
     )
