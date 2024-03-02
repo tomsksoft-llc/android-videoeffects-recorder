@@ -71,6 +71,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -116,7 +117,7 @@ fun CameraScreen() {
 			Toast.makeText(activity, "No permission", Toast.LENGTH_SHORT).show()
 			activity.finish()
 		}
-		viewModel.initializeCamera(activity) // all are granted
+		viewModel.initializeCamera(lifecycleOwner = activity, activity) // all are granted
 	}
 	LaunchedEffect(Unit) { permissionsLauncher.launchMultiplePermissionRequest() }
 

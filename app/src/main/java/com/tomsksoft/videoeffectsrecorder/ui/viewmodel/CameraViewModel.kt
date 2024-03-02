@@ -3,19 +3,16 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.ParcelFileDescriptor
 import android.util.Log
+import androidx.camera.core.CameraSelector
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
-import com.tomsksoft.videoeffectsrecorder.data.CameraStoreImpl
-import com.tomsksoft.videoeffectsrecorder.data.VideoStore
 import com.tomsksoft.videoeffectsrecorder.data.Frame
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraEffectsManager
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
-import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraStoreManager
+import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
@@ -43,8 +40,8 @@ class CameraViewModel: ViewModel() {
         isSmartZoomEnabled = false,
         isBeautifyEnabled = false,
         isVideoRecording = false,
-        isCameraInitialized = false,)
-    )
+        isCameraInitialized = false
+    ))
     val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
     private val _frame = BehaviorSubject.create<Frame>()
@@ -54,53 +51,25 @@ class CameraViewModel: ViewModel() {
 
     private val cameraConfigData = CameraConfigData(
         backgroundMode = CameraConfig.BackgroundMode.Regular,
+        background = null,
+        blur = 1.0,
         smartZoom = null,
         beautification = null,
         colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
     )
 
-    @Volatile
-    private var background: Bitmap? = null
-
-    private lateinit var cameraStoreManager: CameraStoreManager<CameraImpl>
-    private lateinit var cameraRecordManager: CameraRecordManager<CameraImpl, Frame, ParcelFileDescriptor>
-    private lateinit var cameraEffectsManager: CameraEffectsManager<CameraImpl>
-
-    /**
-     * Camera selected from store manager.
-     * Managers will be update on camera change.
-     */
-    private var cameraIndex = 0
-        set(value) {
-            if (field == value) return
-            camera.isEnabled = false
-            field = value
-            camera = selectCamera()
-            camera.isEnabled = true
-            cameraRecordManager.camera = camera
-            cameraEffectsManager.camera = camera
-        }
+    private lateinit var cameraRecordManager: CameraRecordManager<Frame>
     private lateinit var camera: CameraImpl
 
-    fun initializeCamera(context: Activity) {
-        cameraStoreManager = CameraStoreManager(CameraStoreImpl(context))
-        camera = selectCamera()
+    fun initializeCamera(lifecycleOwner: LifecycleOwner, context: Activity) {
+        camera = CameraImpl(lifecycleOwner, context, CameraSelector.DEFAULT_BACK_CAMERA)
+        camera.frame.subscribe(_frame)
         cameraRecordManager = CameraRecordManager(
             camera,
-            VideoStore(context.applicationContext, RECORDS_DIRECTORY),
-            VideoRecorderImpl(context.applicationContext)
+            VideoRecorderImpl(context.applicationContext, RECORDS_DIRECTORY)
         )
-        cameraEffectsManager = CameraEffectsManager(
-            camera,
-            CameraConfig(
-                cameraConfigData.backgroundMode,
-                cameraConfigData.smartZoom,
-                cameraConfigData.beautification,
-                cameraConfigData.colorCorrection
-            )
-        )
+        updateCameraConfig()
         camera.isEnabled = true
-
         _cameraUiState.update {cameraUiState ->
             cameraUiState.copy(
                 isCameraInitialized = true
@@ -127,13 +96,18 @@ class CameraViewModel: ViewModel() {
             //primary options
             PrimaryFiltersMode.BLUR -> {
                 Log.d(TAG, "Blur mode selected")
-                cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Blur(0.5)  // TODO [fmv] add an appropriate way to change blur power
+                cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Blur // TODO [fmv] add an appropriate way to change blur power
                 cameraConfigData.colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
             }
             PrimaryFiltersMode.REPLACE_BACK -> {
                 Log.d(TAG, "Background mode selected")
-                cameraConfigData.backgroundMode = background?.let(CameraConfig.BackgroundMode::Replace)
-                    ?: CameraConfig.BackgroundMode.Remove
+
+                cameraConfigData.backgroundMode =
+                    if (cameraConfigData.background == null)
+                        CameraConfig.BackgroundMode.Remove
+                    else
+                        CameraConfig.BackgroundMode.Replace
+
                 cameraConfigData.colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
             }
             PrimaryFiltersMode.COLOR_CORRECTION -> {
@@ -147,13 +121,7 @@ class CameraViewModel: ViewModel() {
                 Log.d(TAG, "NO mode selected")
             }
         }
-
-        cameraEffectsManager.config = CameraConfig(
-            backgroundMode = cameraConfigData.backgroundMode,
-            smartZoom = cameraConfigData.smartZoom,
-            beautification = cameraConfigData.beautification,
-            colorCorrection = cameraConfigData.colorCorrection
-        )
+        updateCameraConfig()
     }
 
     fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) {
@@ -164,7 +132,7 @@ class CameraViewModel: ViewModel() {
                     cameraConfigData.beautification = null
                 } else {
                     Log.d(TAG, "Beatify mode enabled")
-                    cameraConfigData.beautification = CameraConfig.Beautification(30) // TODO [fmv] add an appropriate way to change beautification power
+                    cameraConfigData.beautification = 30 // TODO [fmv] add an appropriate way to change beautification power
                 }
 
                 _cameraUiState.update { cameraUiState ->
@@ -180,7 +148,7 @@ class CameraViewModel: ViewModel() {
                     cameraConfigData.smartZoom = null
                 } else {
                     Log.d(TAG, "Smart Zoom mode enabled")
-                    cameraConfigData.smartZoom = CameraConfig.SmartZoom(80) // TODO [fmv] add an appropriate way to change beautification power
+                    cameraConfigData.smartZoom = 80 // TODO [fmv] add an appropriate way to change beautification power
                 }
                 _cameraUiState.update { cameraUiState ->
                     cameraUiState.copy(
@@ -189,31 +157,27 @@ class CameraViewModel: ViewModel() {
                 }
             }
         }
-
-        cameraEffectsManager.config = CameraConfig(
-            backgroundMode = cameraConfigData.backgroundMode,
-            smartZoom = cameraConfigData.smartZoom,
-            beautification = cameraConfigData.beautification,
-            colorCorrection = cameraConfigData.colorCorrection
-        )
+        updateCameraConfig()
     }
-    fun setBackground(bitmapStream: InputStream) { // TODO [tva] add bitmap property to UiState
+
+    fun setBackground(bitmapStream: InputStream) {
         viewModelScope.launch {
-            background = withContext(Dispatchers.IO) {
+            val background = withContext(Dispatchers.IO) {
                 bitmapStream.use(BitmapFactory::decodeStream)
             }
             if (_cameraUiState.value.primaryFiltersMode == PrimaryFiltersMode.REPLACE_BACK)
-                cameraEffectsManager.config = cameraEffectsManager.config.copy(
-                    backgroundMode = CameraConfig.BackgroundMode.Replace(background!!)
-                )
+                withContext(Dispatchers.Main) {
+                    cameraConfigData.background = background
+                    cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Replace
+                    updateCameraConfig()
+                }
         }
     }
 
     fun removeBackground() {
-        background = null
-        cameraEffectsManager.config = cameraEffectsManager.config.copy(
-            backgroundMode = CameraConfig.BackgroundMode.Remove
-        )
+        cameraConfigData.background = null
+        cameraConfigData.backgroundMode = CameraConfig.BackgroundMode.Remove
+        updateCameraConfig()
     }
 
     fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode){
@@ -222,11 +186,14 @@ class CameraViewModel: ViewModel() {
                 expandedTopBarMode = expandedTopBarMode
             )
         }
-
     }
 
     fun flipCamera(){
-        cameraIndex = (cameraIndex + 1) % cameraStoreManager.camerasCount
+        camera.cameraSelector =
+            if (camera.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            else
+                CameraSelector.DEFAULT_BACK_CAMERA
     }
 
     fun captureImage(){
@@ -256,16 +223,23 @@ class CameraViewModel: ViewModel() {
         cameraRecordManager.isRecording = false
     }
 
-    private fun selectCamera(): CameraImpl {
-        val camera = cameraStoreManager.cameras[cameraIndex].copy()
-        camera.frame.subscribe(_frame)
-        return camera
-    }
+    private fun updateCameraConfig() = camera.configure(
+        CameraConfig(
+            cameraConfigData.backgroundMode,
+            cameraConfigData.background,
+            cameraConfigData.blur,
+            cameraConfigData.smartZoom,
+            cameraConfigData.beautification,
+            cameraConfigData.colorCorrection
+        )
+    )
 }
 
 data class CameraConfigData(
     var backgroundMode: CameraConfig.BackgroundMode,
-    var smartZoom: CameraConfig.SmartZoom?,
-    var beautification: CameraConfig.Beautification?,
+    var background: Bitmap?,
+    var blur: Double,
+    var smartZoom: Int?,
+    var beautification: Int?,
     var colorCorrection: CameraConfig.ColorCorrection
 )
