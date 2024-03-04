@@ -78,6 +78,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
+import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
@@ -85,9 +86,7 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ExpandedTopBarMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 // TODO [tva] preview has broken because of ComponentActivity reference
 @OptIn(ExperimentalPermissionsApi::class)
@@ -179,7 +178,8 @@ fun CameraScreen() {
 						onRemoveClick = viewModel::removeBackground,
 						onBlurSliderChange = viewModel::setBlurPower,
 						onBeautifySliderChange = viewModel::setBeautifyPower,
-						onSmartZoomSliderChange = viewModel::setZoomPower
+						onSmartZoomSliderChange = viewModel::setZoomPower,
+						onColorCorrectionModeChange = viewModel::setColorCorrectionMode
 					)
 				}
 				BottomBar(
@@ -555,6 +555,7 @@ private fun EffectsOptions(
 	onBlurSliderChange: (Float) -> Unit,
 	onBeautifySliderChange: (Float) -> Unit,
 	onSmartZoomSliderChange: (Float) -> Unit,
+	onColorCorrectionModeChange: (CameraConfig.ColorCorrection) -> Unit
 ) {
 	Box(
 		modifier = Modifier
@@ -594,30 +595,24 @@ private fun EffectsOptions(
 						.fillMaxWidth(),
 					horizontalArrangement = Arrangement.SpaceBetween
 				) {
-					/*RoundedButton(
+					RoundedButton(
 						painter = painterResource(R.drawable.ic_clear),
-						onClick = { *//*TODO*//* },
+						onClick = { onColorCorrectionModeChange(CameraConfig.ColorCorrection.COLOR_CORRECTION) },
 						modifier = Modifier
 							.padding(24.dp)
 					)
 					RoundedButton(
 						painter = painterResource(R.drawable.ic_clear),
-						onClick = { *//*TODO*//* },
+						onClick = { onColorCorrectionModeChange(CameraConfig.ColorCorrection.COLOR_GRADING) },
 						modifier = Modifier
 							.padding(24.dp)
 					)
 					RoundedButton(
 						painter = painterResource(R.drawable.ic_clear),
-						onClick = { *//*TODO*//* },
+						onClick = { onColorCorrectionModeChange(CameraConfig.ColorCorrection.PRESET) },
 						modifier = Modifier
 							.padding(24.dp)
 					)
-					RoundedButton(
-						painter = painterResource(R.drawable.ic_clear),
-						onClick = { *//*TODO*//* },
-						modifier = Modifier
-							.padding(24.dp)
-					)*/
 				}
 			}
 			PrimaryFiltersMode.NONE -> {}

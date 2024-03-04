@@ -248,13 +248,23 @@ class CameraViewModel: ViewModel() {
     }
 
     fun setBeautifyPower(value: Float) {
-        Log.d(TAG,"ui beautify was $value")
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 beautifyPower = (value*100).toInt()
             )
         }
         cameraConfigData.beautification = cameraUiState.value.beautifyPower
+        updateCameraConfig()
+    }
+
+    fun setColorCorrectionMode(mode: CameraConfig.ColorCorrection) {
+        Log.d(TAG, "${mode.name} was chosen as color correction mode")
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+
+            )
+        }
+        cameraConfigData.colorCorrection = mode
         updateCameraConfig()
     }
 
