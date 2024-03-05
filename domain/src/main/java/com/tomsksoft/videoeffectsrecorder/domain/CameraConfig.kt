@@ -27,3 +27,12 @@ data class CameraConfig(
         Blur
     }
 }
+
+val DEFAULT_CAMERA_CONFIG = CameraConfig(
+    backgroundMode = CameraConfig.BackgroundMode.Regular,
+    background = null,
+    blurPower = 0.0,
+    smartZoom = null,
+    beautification = null,
+    colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
+)

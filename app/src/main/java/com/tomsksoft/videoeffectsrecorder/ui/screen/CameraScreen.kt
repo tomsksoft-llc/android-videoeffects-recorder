@@ -581,7 +581,7 @@ private fun EffectsOptions(
 
 			PrimaryFiltersMode.BLUR -> {
 				Slider(
-					value = cameraUiState.blurPower.toFloat(),
+					value = cameraUiState.currentCameraConfig.blurPower.toFloat(),
 					onValueChange = onBlurSliderChange,
 					modifier = Modifier
 						.align(Alignment.BottomCenter)
@@ -634,7 +634,7 @@ private fun EffectsOptions(
 					)
 					Slider(
 						onValueChange = onBeautifySliderChange,
-						value = (cameraUiState.beautifyPower/100f),//.toFloat(),
+						value = ((cameraUiState.currentCameraConfig.beautification ?: 0)/100f),
 						modifier = Modifier
 							.weight(3f)
 							.padding(3.dp)
@@ -654,7 +654,7 @@ private fun EffectsOptions(
 							.padding(3.dp)
 					)
 					Slider(
-						value = cameraUiState.zoomPower/100f/*.toFloat()*/,
+						value = (cameraUiState.currentCameraConfig.smartZoom ?: 0)/100f,
 						onValueChange = onSmartZoomSliderChange,
 						modifier = Modifier
 							.weight(3f)
