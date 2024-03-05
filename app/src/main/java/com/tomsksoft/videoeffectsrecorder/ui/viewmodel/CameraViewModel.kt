@@ -79,7 +79,7 @@ class CameraViewModel: ViewModel() {
         // TODO [fmv]: add usecase interaction
     }
 
-    fun setPrimaryFilter(filtersMode: PrimaryFiltersMode, ) {
+    fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) {
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 primaryFiltersMode = filtersMode,
@@ -253,7 +253,7 @@ class CameraViewModel: ViewModel() {
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 currentCameraConfig = cameraUiState.currentCameraConfig.copy(
-                    colorCorrection = CameraConfig.ColorCorrection.COLOR_CORRECTION
+                    colorCorrection = mode
                 )
             )
         }
