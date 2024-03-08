@@ -9,9 +9,8 @@ import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.LifecycleOwner
-import com.effectssdk.tsvb.frame.factory.FrameFactoryImpl
+import com.effectssdk.tsvb.EffectsSDK
 import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
-import com.effectssdk.tsvb.pipeline.ImagePipelineImpl
 import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
 import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
@@ -26,13 +25,13 @@ class CameraImpl(
     cameraSelector: CameraSelector
 ): Camera, Analyzer, OnFrameAvailableListener {
     companion object {
-        private val frameFactory = FrameFactoryImpl()
+        private val sdkFactory = EffectsSDK.createSDKFactory()
         private val executor = Executors.newSingleThreadExecutor()
     }
 
-    private val pipeline = ImagePipelineImpl.Builder()
-        .setContext(context)
-        .build()
+    private val pipeline = sdkFactory.createImagePipeline(
+        context = context
+    )
 
     private val analysis = ImageAnalysis.Builder().build()
     private lateinit var processCameraProvider: ProcessCameraProvider
@@ -128,7 +127,8 @@ class CameraImpl(
         )
 
         pipeline.process(
-            frameFactory.createARGB(bitmap)
+            /*frameFactory.createARGB(bitmap)*/
+            bitmap
         )
     }
 
