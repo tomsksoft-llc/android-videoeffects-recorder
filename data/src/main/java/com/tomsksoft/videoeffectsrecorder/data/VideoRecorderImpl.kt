@@ -139,7 +139,7 @@ class VideoRecorderImpl(
                 setVideoFrameRate(30) // use also setCaptureRate() for time lapse
                 setVideoSize(width, height)
 
-                setOrientationHint((360 - (degree.value ?: 0)) % 360)
+                setOrientationHint(degree.value ?: 0)
                 setOutputFile(parcelDescriptor.fileDescriptor)
 
                 prepare()

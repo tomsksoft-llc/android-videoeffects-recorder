@@ -1,6 +1,7 @@
 package com.tomsksoft.videoeffectsrecorder.data
 
 import android.app.Activity
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import androidx.camera.core.CameraSelector
@@ -18,6 +19,7 @@ import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import java.util.concurrent.Executors
+import kotlin.math.abs
 
 class CameraImpl(
     private val lifecycleOwner: LifecycleOwner,
@@ -36,8 +38,10 @@ class CameraImpl(
     private val analysis = ImageAnalysis.Builder().build()
     private lateinit var processCameraProvider: ProcessCameraProvider
 
+    private val orientationListener = OrientationEventListenerImpl(context)
+
     private val _frame = BehaviorSubject.create<Any>().toSerialized()
-    private val _degree = BehaviorSubject.create<Int>().toSerialized()
+    private val _degree = BehaviorSubject.create<Int>()
 
     override val frame = _frame.observeOn(Schedulers.io())
     override val degree = _degree.observeOn(Schedulers.io())
@@ -142,12 +146,33 @@ class CameraImpl(
     private fun start() {
         context.runOnUiThread {
             processCameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, analysis)
+            orientationListener.enable()
         }
     }
 
     private fun stop() {
         context.runOnUiThread {
             processCameraProvider.unbindAll()
+            orientationListener.disable()
+        }
+    }
+
+    private inner class OrientationEventListenerImpl(
+        context: Context
+    ): android.view.OrientationEventListener(context) {
+        override fun onOrientationChanged(orientation: Int) {
+            if (orientation == ORIENTATION_UNKNOWN) // flat orientation
+                return
+
+            val degree = when {
+                abs(orientation - 90) <= 45 -> 90
+                abs(orientation - 180) <= 45 -> 180
+                abs(orientation - 270) <= 45 -> 270
+                else -> 0
+            }
+
+            if (degree != _degree.value)
+                _degree.onNext(degree)
         }
     }
 }
