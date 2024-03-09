@@ -87,7 +87,7 @@ class CameraViewModel: ViewModel() {
                     when (filtersMode) {
                         PrimaryFiltersMode.BLUR -> cameraUiState.currentCameraConfig.copy(
                             backgroundMode = CameraConfig.BackgroundMode.Blur,
-                            blurPower = 0.5
+                            blurPower = 0.5f
                         )
                         PrimaryFiltersMode.REPLACE_BACK -> cameraUiState.currentCameraConfig.copy(
                             backgroundMode =
@@ -218,7 +218,7 @@ class CameraViewModel: ViewModel() {
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 currentCameraConfig = cameraUiState.currentCameraConfig.copy(
-                    blurPower = value.toDouble()
+                    blurPower = value
                 )
             )
         }

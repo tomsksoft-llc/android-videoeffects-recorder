@@ -9,7 +9,7 @@ package com.tomsksoft.videoeffectsrecorder.domain
 data class CameraConfig(
     val backgroundMode: BackgroundMode,
     val background: Any?,
-    val blurPower: Double,
+    val blurPower: Float,
     val smartZoom: Int?,
     val beautification: Int?,
     val colorCorrection: ColorCorrection
@@ -31,7 +31,7 @@ data class CameraConfig(
 val DEFAULT_CAMERA_CONFIG = CameraConfig(
     backgroundMode = CameraConfig.BackgroundMode.Regular,
     background = null,
-    blurPower = 0.0,
+    blurPower = 0f,
     smartZoom = null,
     beautification = null,
     colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
