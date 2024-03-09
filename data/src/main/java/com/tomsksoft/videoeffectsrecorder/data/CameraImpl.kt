@@ -1,12 +1,9 @@
 package com.tomsksoft.videoeffectsrecorder.data
 
 import android.app.Activity
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageAnalysis.Analyzer
@@ -24,15 +21,12 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import java.util.concurrent.Executors
 import kotlin.math.abs
-import kotlin.math.acos
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 class CameraImpl(
     private val lifecycleOwner: LifecycleOwner,
     private val context: Activity,
     cameraSelector: CameraSelector
-): Camera, Analyzer, OnFrameAvailableListener, SensorEventListener {
+): Camera, Analyzer, OnFrameAvailableListener {
     companion object {
         private val frameFactory = FrameFactoryImpl()
         private val executor = Executors.newSingleThreadExecutor()
@@ -45,8 +39,7 @@ class CameraImpl(
     private val analysis = ImageAnalysis.Builder().build()
     private lateinit var processCameraProvider: ProcessCameraProvider
 
-    private val sensorManager: SensorManager = context.getSystemService(SensorManager::class.java)
-    private val gravitySensor: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)!!
+    private val orientationListener = OrientationEventListenerImpl(context)
 
     private val _frame = BehaviorSubject.create<Any>().toSerialized()
     private val _degree = BehaviorSubject.create<Int>()
@@ -150,36 +143,36 @@ class CameraImpl(
         )
     }
 
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
-
-    // update frame orientation degree
-    override fun onSensorChanged(event: SensorEvent) {
-        val (x, y) = event.values[0].toDouble() to event.values[1].toDouble()
-        val length = sqrt(x.pow(2) + y.pow(2))
-        val (cos, sin) = x / length to y / length
-        val radians = if (sin < 0) -acos(cos) else acos(cos)
-        val degree = (radians * 180 / Math.PI + 270) % 360
-        val orientation = when {
-            abs(degree - 90) <= 45 -> 90
-            abs(degree - 180) <= 45 -> 180
-            abs(degree - 270) <= 45 -> 270
-            else -> 0
-        }
-        if (_degree.value != orientation)
-            _degree.onNext(orientation)
-    }
-
     private fun start() {
         context.runOnUiThread {
             processCameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, analysis)
-            sensorManager.registerListener(this, gravitySensor, 500 /* ms */)
+            orientationListener.enable()
         }
     }
 
     private fun stop() {
         context.runOnUiThread {
             processCameraProvider.unbindAll()
-            sensorManager.unregisterListener(this)
+            orientationListener.disable()
+        }
+    }
+
+    private inner class OrientationEventListenerImpl(
+        context: Context
+    ): android.view.OrientationEventListener(context) {
+        override fun onOrientationChanged(orientation: Int) {
+            if (orientation == ORIENTATION_UNKNOWN) // flat orientation
+                return
+
+            val degree = when {
+                abs(orientation - 90) <= 45 -> 90
+                abs(orientation - 180) <= 45 -> 180
+                abs(orientation - 270) <= 45 -> 270
+                else -> 0
+            }
+
+            if (degree != _degree.value)
+                _degree.onNext(degree)
         }
     }
 }
