@@ -1,15 +1,18 @@
 package com.tomsksoft.videoeffectsrecorder.data
 
-import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import androidx.annotation.MainThread
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.lifecycleScope
 import com.effectssdk.tsvb.EffectsSDK
 import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
 import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
@@ -18,22 +21,21 @@ import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.BehaviorSubject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 import kotlin.math.abs
 
-class CameraImpl(
-    private val lifecycleOwner: LifecycleOwner,
-    private val context: Activity,
+class CameraImpl @MainThread constructor(
+    context: Context,
     cameraSelector: CameraSelector
-): Camera, Analyzer, OnFrameAvailableListener {
+): Camera, Analyzer, OnFrameAvailableListener, LifecycleOwner {
     companion object {
         private val sdkFactory = EffectsSDK.createSDKFactory()
         private val executor = Executors.newSingleThreadExecutor()
     }
 
-    private val pipeline = sdkFactory.createImagePipeline(
-        context = context
-    )
+    private val pipeline = sdkFactory.createImagePipeline(context)
 
     private val analysis = ImageAnalysis.Builder().build()
     private lateinit var processCameraProvider: ProcessCameraProvider
@@ -45,6 +47,8 @@ class CameraImpl(
 
     override val frame = _frame.observeOn(Schedulers.io())
     override val degree = _degree.observeOn(Schedulers.io())
+
+    override val lifecycle = LifecycleRegistry(this)
 
     var cameraSelector: CameraSelector = cameraSelector
         set(value) {
@@ -71,6 +75,7 @@ class CameraImpl(
     init {
         pipeline.setOnFrameAvailableListener(this)
         analysis.setAnalyzer(executor, this)
+        lifecycle.currentState = Lifecycle.State.CREATED
 
         val listenableFuture = ProcessCameraProvider.getInstance(context)
         listenableFuture.addListener({
@@ -144,14 +149,20 @@ class CameraImpl(
     }
 
     private fun start() {
-        context.runOnUiThread {
-            processCameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, analysis)
+        lifecycleScope.launch(Dispatchers.Main) {
+            lifecycle.currentState = Lifecycle.State.RESUMED
+            processCameraProvider.bindToLifecycle(
+                this@CameraImpl,
+                cameraSelector,
+                analysis
+            )
             orientationListener.enable()
         }
     }
 
     private fun stop() {
-        context.runOnUiThread {
+        lifecycleScope.launch(Dispatchers.Main) {
+            lifecycle.currentState = Lifecycle.State.CREATED
             processCameraProvider.unbindAll()
             orientationListener.disable()
         }

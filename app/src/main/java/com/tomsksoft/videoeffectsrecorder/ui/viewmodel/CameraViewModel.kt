@@ -1,12 +1,12 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
-import android.app.Activity
+import android.app.Application
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.camera.core.CameraSelector
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.FrameMapper
@@ -26,11 +26,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.InputStream
 
-private const val TAG = "Camera View Model"
-
-class CameraViewModel: ViewModel() {
+class CameraViewModel(app: Application): AndroidViewModel(app) {
     companion object {
         const val RECORDS_DIRECTORY = "Effects"
+        private const val TAG = "Camera View Model"
     }
 
     private val _cameraUiState : MutableStateFlow<CameraUiState>
@@ -41,7 +40,7 @@ class CameraViewModel: ViewModel() {
         isSmartZoomEnabled = false,
         isBeautifyEnabled = false,
         isVideoRecording = false,
-        isCameraInitialized = false,
+        isCameraInitialized = true, // TODO [tva] check if EffectsSDK is initialized
         currentCameraConfig = DEFAULT_CAMERA_CONFIG
     ))
     val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
@@ -49,24 +48,20 @@ class CameraViewModel: ViewModel() {
     private val _frame = BehaviorSubject.create<Bitmap>()
     val frame: Observable<Bitmap> = _frame.observeOn(AndroidSchedulers.mainThread())
 
-    private lateinit var cameraRecordManager: CameraRecordManager
-    private lateinit var camera: CameraImpl
+    private val context: Context
+        get() = getApplication<Application>().applicationContext
 
-    fun initializeCamera(lifecycleOwner: LifecycleOwner, context: Activity) {
-        camera = CameraImpl(lifecycleOwner, context, CameraSelector.DEFAULT_BACK_CAMERA)
-        camera.frame
-            .map(FrameMapper::fromAny)
-            .subscribe(_frame)
-        cameraRecordManager = CameraRecordManager(
-            camera,
-            VideoRecorderImpl(context.applicationContext, RECORDS_DIRECTORY)
-        )
-        camera.configure(cameraUiState.value.currentCameraConfig)
-        camera.isEnabled = true
-        _cameraUiState.update {cameraUiState ->
-            cameraUiState.copy(
-                isCameraInitialized = true
-            )
+    private val camera = CameraImpl(context, CameraSelector.DEFAULT_BACK_CAMERA)
+    private val cameraRecordManager = CameraRecordManager(
+        camera,
+        VideoRecorderImpl(context, RECORDS_DIRECTORY)
+    )
+
+    init {
+        camera.apply {
+            frame.map(FrameMapper::fromAny).subscribe(_frame)
+            configure(cameraUiState.value.currentCameraConfig)
+            isEnabled = true
         }
     }
 

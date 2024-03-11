@@ -85,11 +85,11 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
 import kotlinx.coroutines.launch
 
-// TODO [tva] preview has broken because of ComponentActivity reference
+// TODO [tva] ViewModel breaks rendering
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen() {
-	val activity = LocalContext.current as ComponentActivity
+	val context = LocalContext.current
 	val viewModel = viewModel<CameraViewModel>()
 	val frame by viewModel.frame.subscribeAsState(null)
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
@@ -97,7 +97,7 @@ fun CameraScreen() {
 	val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
 		if (uri != null)
 			viewModel.setBackground(
-				activity.contentResolver.openInputStream(uri)!!
+				context.contentResolver.openInputStream(uri)!!
 			) // TODO [tva] check on Android 9 or below
 	}
 	val permissionsLauncher = rememberMultiplePermissionsState(
@@ -106,19 +106,17 @@ fun CameraScreen() {
 			Manifest.permission.RECORD_AUDIO
 		)
 	) {
-		if (it.values.any { granted -> !granted }) { // any permission denied
-			Toast.makeText(activity, "No permission", Toast.LENGTH_SHORT).show()
-			activity.finish()
-		}
-		viewModel.initializeCamera(lifecycleOwner = activity, activity) // all are granted
+		if (it.values.any { granted -> !granted }) // any permission denied
+			Toast.makeText(context, "No permission", Toast.LENGTH_SHORT).show()
 	}
 	LaunchedEffect(Unit) { permissionsLauncher.launchMultiplePermissionRequest() }
 
 	// keep screen on
-	DisposableEffect(Unit) {
-		val window = activity.window
-		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-		onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+	(context as? ComponentActivity)?.run {
+		DisposableEffect(Unit) {
+			window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+			onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+		}
 	}
 
 	if(!cameraUiState.isCameraInitialized){
