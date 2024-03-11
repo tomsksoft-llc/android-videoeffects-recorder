@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.InputStream
 
-class CameraViewModel(app: Application): AndroidViewModel(app) {
+class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewModel {
     companion object {
         const val RECORDS_DIRECTORY = "Effects"
         private const val TAG = "Camera View Model"
@@ -43,10 +43,10 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         isCameraInitialized = true, // TODO [tva] check if EffectsSDK is initialized
         currentCameraConfig = DEFAULT_CAMERA_CONFIG
     ))
-    val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
+    override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
     private val _frame = BehaviorSubject.create<Bitmap>()
-    val frame: Observable<Bitmap> = _frame.observeOn(AndroidSchedulers.mainThread())
+    override val frame: Observable<Bitmap> = _frame.observeOn(AndroidSchedulers.mainThread())
 
     private val context: Context
         get() = getApplication<Application>().applicationContext
@@ -65,7 +65,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         }
     }
 
-    fun setFlash(flashMode: FlashMode) {
+    override fun setFlash(flashMode: FlashMode) {
         _cameraUiState.update{cameraUiState ->
             cameraUiState.copy(
                 flashMode = flashMode
@@ -74,7 +74,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         // TODO [fmv]: add usecase interaction
     }
 
-    fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) {
+    override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) {
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 primaryFiltersMode = filtersMode,
@@ -104,7 +104,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         camera.configure(cameraUiState.value.currentCameraConfig)
     }
 
-    fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) {
+    override fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) {
         _cameraUiState.update {cameraUiState ->
             when(filtersMode) {
                 SecondaryFiltersMode.BEAUTIFY -> {
@@ -134,7 +134,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         camera.configure(cameraUiState.value.currentCameraConfig)
     }
 
-    fun setBackground(bitmapStream: InputStream) {
+    override fun setBackground(bitmapStream: InputStream) {
         viewModelScope.launch {
             val background = withContext(Dispatchers.IO) {
                 bitmapStream.use(BitmapFactory::decodeStream)
@@ -154,7 +154,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         }
     }
 
-    fun removeBackground() {
+    override fun removeBackground() {
         _cameraUiState.update {cameraUiState ->
             cameraUiState.copy(
                 currentCameraConfig = cameraUiState.currentCameraConfig.copy(
@@ -166,7 +166,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         camera.configure(cameraUiState.value.currentCameraConfig)
     }
 
-    fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode){
+    override fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode) {
         _cameraUiState.update {cameraUiState ->
             cameraUiState.copy(
                 expandedTopBarMode = expandedTopBarMode
@@ -174,7 +174,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         }
     }
 
-    fun flipCamera(){
+    override fun flipCamera() {
         camera.cameraSelector =
             if (camera.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
                 CameraSelector.DEFAULT_FRONT_CAMERA
@@ -182,12 +182,12 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
                 CameraSelector.DEFAULT_BACK_CAMERA
     }
 
-    fun captureImage(){
+    override fun captureImage() {
         Log.d(TAG, "Capture image")
         // TODO: [fmv] add usecase interaction
     }
 
-    fun startVideoRecording(){
+    override fun startVideoRecording() {
         Log.d(TAG, "Start recording")
 
         _cameraUiState.update {cameraUiState ->
@@ -199,7 +199,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
 
     }
 
-    fun stopVideoRecording() {
+    override fun stopVideoRecording() {
         _cameraUiState.update {cameraUiState ->
             cameraUiState.copy(
                 isVideoRecording = false
@@ -209,7 +209,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         cameraRecordManager.isRecording = false
     }
 
-    fun setBlurPower(value: Float) {
+    override fun setBlurPower(value: Float) {
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 currentCameraConfig = cameraUiState.currentCameraConfig.copy(
@@ -220,7 +220,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         camera.configure(cameraUiState.value.currentCameraConfig)
     }
 
-    fun setZoomPower(value: Float) {
+    override fun setZoomPower(value: Float) {
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 currentCameraConfig = cameraUiState.currentCameraConfig.copy(
@@ -231,7 +231,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         camera.configure(cameraUiState.value.currentCameraConfig)
     }
 
-    fun setBeautifyPower(value: Float) {
+    override fun setBeautifyPower(value: Float) {
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 currentCameraConfig = cameraUiState.currentCameraConfig.copy(
@@ -243,7 +243,7 @@ class CameraViewModel(app: Application): AndroidViewModel(app) {
         camera.configure(cameraUiState.value.currentCameraConfig)
     }
 
-    fun setColorCorrectionMode(mode: CameraConfig.ColorCorrection) {
+    override fun setColorCorrectionMode(mode: CameraConfig.ColorCorrection) {
         Log.d(TAG, "${mode.name} was chosen as color correction mode")
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
