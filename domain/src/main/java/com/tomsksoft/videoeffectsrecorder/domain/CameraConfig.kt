@@ -7,12 +7,12 @@ package com.tomsksoft.videoeffectsrecorder.domain
  * @param beautification beautification power in percent
  */
 data class CameraConfig(
-    val backgroundMode: BackgroundMode,
-    val background: Any?,
-    val blurPower: Float,
-    val smartZoom: Int?,
-    val beautification: Int?,
-    val colorCorrection: ColorCorrection
+    val backgroundMode: BackgroundMode = BackgroundMode.Regular,
+    val background: Any? = null,
+    val blurPower: Float = 0f,
+    val smartZoom: Int? = null,
+    val beautification: Int? = null,
+    val colorCorrection: ColorCorrection = ColorCorrection.NO_FILTER
 ) {
     enum class ColorCorrection {
         NO_FILTER,
@@ -28,11 +28,4 @@ data class CameraConfig(
     }
 }
 
-val DEFAULT_CAMERA_CONFIG = CameraConfig(
-    backgroundMode = CameraConfig.BackgroundMode.Regular,
-    background = null,
-    blurPower = 0f,
-    smartZoom = null,
-    beautification = null,
-    colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
-)
+val DEFAULT_CAMERA_CONFIG = CameraConfig()

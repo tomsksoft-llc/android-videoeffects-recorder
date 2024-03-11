@@ -33,16 +33,7 @@ class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewM
     }
 
     private val _cameraUiState : MutableStateFlow<CameraUiState>
-            = MutableStateFlow(CameraUiState(
-        flashMode = FlashMode.AUTO,
-        expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
-        primaryFiltersMode = PrimaryFiltersMode.NONE,
-        isSmartZoomEnabled = false,
-        isBeautifyEnabled = false,
-        isVideoRecording = false,
-        isCameraInitialized = true, // TODO [tva] check if EffectsSDK is initialized
-        currentCameraConfig = DEFAULT_CAMERA_CONFIG
-    ))
+            = MutableStateFlow(CameraUiState())
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
     private val _frame = BehaviorSubject.create<Bitmap>()
