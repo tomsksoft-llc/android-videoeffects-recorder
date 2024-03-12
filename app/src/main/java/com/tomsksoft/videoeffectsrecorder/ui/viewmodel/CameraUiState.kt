@@ -14,5 +14,4 @@ data class CameraUiState(
     val isBeautifyEnabled: Boolean = false,
     val isVideoRecording: Boolean = false,
     val isCameraInitialized: Boolean = true,
-    val currentCameraConfig: CameraConfig = DEFAULT_CAMERA_CONFIG
 )

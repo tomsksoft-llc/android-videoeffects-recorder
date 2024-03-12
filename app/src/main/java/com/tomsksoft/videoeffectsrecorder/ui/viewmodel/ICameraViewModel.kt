@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
 
 interface ICameraViewModel {
+    val cameraConfig: StateFlow<CameraConfig>
     val cameraUiState: StateFlow<CameraUiState>
     val frame: Observable<Bitmap>
 

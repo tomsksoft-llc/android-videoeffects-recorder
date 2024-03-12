@@ -18,9 +18,10 @@ object CameraViewModelStub: ICameraViewModel {
         isBeautifyEnabled = false,
         isVideoRecording = false,
         isCameraInitialized = true,
-        currentCameraConfig = DEFAULT_CAMERA_CONFIG
+        //currentCameraConfig = DEFAULT_CAMERA_CONFIG
     ))
     override val frame: Observable<Bitmap> = BehaviorSubject.create()
+    override val cameraConfig: StateFlow<CameraConfig> = MutableStateFlow(CameraConfig())
 
     override fun setFlash(flashMode: FlashMode) = throw unimplementedError()
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) = throw unimplementedError()
