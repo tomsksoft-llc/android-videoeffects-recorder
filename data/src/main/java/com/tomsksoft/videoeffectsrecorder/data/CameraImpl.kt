@@ -28,7 +28,7 @@ import kotlin.math.abs
 
 class CameraImpl @MainThread constructor(
     context: Context,
-    cameraSelector: CameraSelector
+    direction: Camera.Direction
 ): Camera, Analyzer, OnFrameAvailableListener, LifecycleOwner {
     companion object {
         private val sdkFactory = EffectsSDK.createSDKFactory()
@@ -50,7 +50,7 @@ class CameraImpl @MainThread constructor(
 
     override val lifecycle = LifecycleRegistry(this)
 
-    var cameraSelector: CameraSelector = cameraSelector
+    override var direction: Camera.Direction = direction
         set(value) {
             field = value
             if (isEnabled && isInitialized) {
@@ -126,7 +126,7 @@ class CameraImpl @MainThread constructor(
 
         val matrix = Matrix().apply {
             preRotate(image.imageInfo.rotationDegrees.toFloat(), 0.5f, 0.5f)
-            if (cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA) // mirror front camera
+            if (direction == Camera.Direction.FRONT) // mirror front camera
                 postScale(-1f, 1f)
         }
 
@@ -135,10 +135,7 @@ class CameraImpl @MainThread constructor(
             bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
         )
 
-        pipeline.process(
-            /*frameFactory.createARGB(bitmap)*/
-            bitmap
-        )
+        pipeline.process(bitmap)
     }
 
     // get frame from EffectsSDK pipeline and forward it to Rx
@@ -153,7 +150,10 @@ class CameraImpl @MainThread constructor(
             lifecycle.currentState = Lifecycle.State.RESUMED
             processCameraProvider.bindToLifecycle(
                 this@CameraImpl,
-                cameraSelector,
+                when (direction) {
+                    Camera.Direction.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
+                    Camera.Direction.BACK -> CameraSelector.DEFAULT_BACK_CAMERA
+                },
                 analysis
             )
             orientationListener.enable()
