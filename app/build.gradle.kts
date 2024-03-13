@@ -1,6 +1,8 @@
 plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlin.android)
+	alias(libs.plugins.kotlin.kapt)
+	alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -90,4 +92,8 @@ dependencies {
 	implementation(libs.androidx.camera.lifecycle)
 	implementation(libs.androidx.camera.view)
 
+	/* Hilt */
+	kapt(libs.hilt.android.compiler)
+	implementation(libs.hilt.android)
+	implementation(libs.hilt.navigation.compose)
 }
