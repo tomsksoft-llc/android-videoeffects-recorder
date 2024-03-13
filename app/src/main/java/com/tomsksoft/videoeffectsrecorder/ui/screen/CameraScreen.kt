@@ -69,6 +69,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -78,47 +79,61 @@ import com.tomsksoft.videoeffectsrecorder.R
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
+import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ICameraViewModel
+import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelImpl
+import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelStub
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ExpandedTopBarMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
 import kotlinx.coroutines.launch
 
-// TODO [tva] preview has broken because of ComponentActivity reference
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen() {
-	val activity = LocalContext.current as ComponentActivity
-	val viewModel = viewModel<CameraViewModel>()
-	val frame by viewModel.frame.subscribeAsState(null)
-	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
-	val snackbarHostState = remember { SnackbarHostState() }
-	val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-		if (uri != null)
-			viewModel.setBackground(
-				activity.contentResolver.openInputStream(uri)!!
-			) // TODO [tva] check on Android 9 or below
-	}
+	val context = LocalContext.current
+
+	// permissions
 	val permissionsLauncher = rememberMultiplePermissionsState(
 		permissions = mutableListOf(
 			Manifest.permission.CAMERA,
 			Manifest.permission.RECORD_AUDIO
 		)
 	) {
-		if (it.values.any { granted -> !granted }) { // any permission denied
-			Toast.makeText(activity, "No permission", Toast.LENGTH_SHORT).show()
-			activity.finish()
-		}
-		viewModel.initializeCamera(lifecycleOwner = activity, activity) // all are granted
+		if (it.values.any { granted -> !granted }) // any permission denied
+			Toast.makeText(context, "No permission", Toast.LENGTH_SHORT).show()
 	}
 	LaunchedEffect(Unit) { permissionsLauncher.launchMultiplePermissionRequest() }
 
 	// keep screen on
-	DisposableEffect(Unit) {
-		val window = activity.window
-		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-		onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+	(context as? ComponentActivity)?.run {
+		DisposableEffect(Unit) {
+			window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+			onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+		}
+	}
+
+	// ui
+	CameraUi(viewModel<CameraViewModelImpl>())
+}
+
+@Preview
+@Composable
+fun CameraPreview() {
+	CameraUi(CameraViewModelStub)
+}
+
+@Composable
+fun CameraUi(viewModel: ICameraViewModel) {
+	val context = LocalContext.current
+	val frame by viewModel.frame.subscribeAsState(null)
+	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
+	val snackbarHostState = remember { SnackbarHostState() }
+	val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+		if (uri != null)
+			viewModel.setBackground(
+				context.contentResolver.openInputStream(uri)!!
+			) // TODO [tva] check on Android 9 or below
 	}
 
 	if(!cameraUiState.isCameraInitialized){
