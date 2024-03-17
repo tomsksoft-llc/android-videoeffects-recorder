@@ -3,6 +3,7 @@ package com.tomsksoft.videoeffectsrecorder.data
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.util.Log
 import androidx.annotation.MainThread
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -22,6 +23,8 @@ import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Timer
+import java.util.TimerTask
 import java.util.concurrent.Executors
 import kotlin.math.abs
 
@@ -68,7 +71,12 @@ class CameraImpl @MainThread constructor(
 
     private var skipNextFrame = false // workaround to get rid of upside down frames (it seems ImageAnalysis have a bug)
 
+    /* FPS counter for debug purposes */
+    @Volatile private var framesCount: Int = 0
+    @Volatile private var fps: Float = 0f
+
     init {
+        pipeline.setSegmentationGap(1)
         pipeline.setOnFrameAvailableListener(this)
         analysis.setAnalyzer(executor, this)
         lifecycle.currentState = Lifecycle.State.CREATED
@@ -80,6 +88,18 @@ class CameraImpl @MainThread constructor(
             if (isEnabled)
                 start()
         }, executor)
+
+        /* debug FPS counter */
+        Timer().apply {
+            val period = 3000L
+            schedule(object: TimerTask() {
+                override fun run() {
+                    fps = framesCount * 1000f / period
+                    framesCount = 0
+                    Log.d("FPS", fps.toString())
+                }
+            }, period, period)
+        }
     }
 
     override fun configure(config: CameraConfig): Unit =
@@ -136,6 +156,7 @@ class CameraImpl @MainThread constructor(
 
     // get frame from EffectsSDK pipeline and forward it to Rx
     override fun onNewFrame(bitmap: Bitmap) {
+        framesCount++
         frameSource.onNext(
             FrameMapper.toAny(bitmap)
         )
