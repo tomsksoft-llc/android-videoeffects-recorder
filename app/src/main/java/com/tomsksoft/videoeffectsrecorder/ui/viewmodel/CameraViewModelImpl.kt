@@ -14,7 +14,6 @@ import com.tomsksoft.videoeffectsrecorder.domain.DEFAULT_CAMERA_CONFIG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,12 +47,12 @@ class CameraViewModelImpl @Inject constructor(
     ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
-    private val _frame = BehaviorSubject.create<Bitmap>()
-    override val frame: Observable<Bitmap> = _frame.observeOn(AndroidSchedulers.mainThread())
+    override val frame: Observable<Bitmap> = camera.frameSource
+        .map(FrameMapper::fromAny)
+        .observeOn(AndroidSchedulers.mainThread())
 
     init {
         camera.apply {
-            frame.map(FrameMapper::fromAny).subscribe(_frame)
             configure(cameraUiState.value.currentCameraConfig)
             isEnabled = true
         }

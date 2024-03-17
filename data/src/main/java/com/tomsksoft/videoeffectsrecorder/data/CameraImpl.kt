@@ -19,7 +19,6 @@ import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
 import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import io.reactivex.rxjava3.schedulers.Schedulers
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,11 +41,8 @@ class CameraImpl @MainThread constructor(
 
     private val orientationListener = OrientationEventListenerImpl(context)
 
-    private val _frame = BehaviorSubject.create<Any>().toSerialized()
-    private val _degree = BehaviorSubject.create<Int>()
-
-    override val frame = _frame.observeOn(Schedulers.io())
-    override val degree = _degree.observeOn(Schedulers.io())
+    override val frameSource = BehaviorSubject.create<Any>().toSerialized()
+    override var orientation: Int = 0
 
     override val lifecycle = LifecycleRegistry(this)
 
@@ -140,7 +136,7 @@ class CameraImpl @MainThread constructor(
 
     // get frame from EffectsSDK pipeline and forward it to Rx
     override fun onNewFrame(bitmap: Bitmap) {
-        _frame.onNext(
+        frameSource.onNext(
             FrameMapper.toAny(bitmap)
         )
     }
@@ -182,8 +178,8 @@ class CameraImpl @MainThread constructor(
                 else -> 0
             }
 
-            if (degree != _degree.value)
-                _degree.onNext(degree)
+            if (degree != orientation)
+                this@CameraImpl.orientation = degree
         }
     }
 }
