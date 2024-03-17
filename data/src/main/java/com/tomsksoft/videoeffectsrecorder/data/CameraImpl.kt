@@ -14,12 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.lifecycleScope
-import com.effectssdk.tsvb.EffectsSDK
-import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
-import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
-import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
-import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,13 +26,10 @@ import kotlin.math.abs
 class CameraImpl @MainThread constructor(
     context: Context,
     direction: Camera.Direction
-): Camera, Analyzer, OnFrameAvailableListener, LifecycleOwner {
+): Camera, Analyzer, LifecycleOwner {
     companion object {
-        private val sdkFactory = EffectsSDK.createSDKFactory()
         private val executor = Executors.newSingleThreadExecutor()
     }
-
-    private val pipeline = sdkFactory.createImagePipeline(context)
 
     private val analysis = ImageAnalysis.Builder().build()
     private lateinit var processCameraProvider: ProcessCameraProvider
@@ -71,13 +63,7 @@ class CameraImpl @MainThread constructor(
 
     private var skipNextFrame = false // workaround to get rid of upside down frames (it seems ImageAnalysis have a bug)
 
-    /* FPS counter for debug purposes */
-    @Volatile private var framesCount: Int = 0
-    @Volatile private var fps: Float = 0f
-
     init {
-        pipeline.setSegmentationGap(1)
-        pipeline.setOnFrameAvailableListener(this)
         analysis.setAnalyzer(executor, this)
         lifecycle.currentState = Lifecycle.State.CREATED
 
@@ -88,52 +74,8 @@ class CameraImpl @MainThread constructor(
             if (isEnabled)
                 start()
         }, executor)
-
-        /* debug FPS counter */
-        Timer().apply {
-            val period = 3000L
-            schedule(object: TimerTask() {
-                override fun run() {
-                    fps = framesCount * 1000f / period
-                    framesCount = 0
-                    Log.d("FPS", fps.toString())
-                }
-            }, period, period)
-        }
     }
 
-    override fun configure(config: CameraConfig): Unit =
-        pipeline.run {
-            /* Background Mode */
-            when (config.backgroundMode) {
-                CameraConfig.BackgroundMode.Regular -> setMode(PipelineMode.NO_EFFECT)
-                CameraConfig.BackgroundMode.Remove -> setMode(PipelineMode.REMOVE)
-                CameraConfig.BackgroundMode.Replace -> {
-                    setMode(PipelineMode.REPLACE)
-                    setBackground(config.background as Bitmap)
-                }
-                CameraConfig.BackgroundMode.Blur -> {
-                    setMode(PipelineMode.BLUR)
-                    setBlurPower(config.blurPower)
-                }
-            }
-            /* Smart Zoom */
-            setZoomLevel(config.smartZoom ?: 0)
-            /* Beautification */
-            if (config.beautification != null) {
-                enableBeautification(true)
-                setBeautificationPower(config.beautification!!)
-            } else enableBeautification(false)
-            /* Color Correction */
-            setColorCorrectionMode(when (config.colorCorrection) {
-                CameraConfig.ColorCorrection.NO_FILTER -> ColorCorrectionMode.NO_FILTER_MODE
-                CameraConfig.ColorCorrection.COLOR_CORRECTION -> ColorCorrectionMode.COLOR_CORRECTION_MODE
-                CameraConfig.ColorCorrection.COLOR_GRADING -> ColorCorrectionMode.COLOR_GRADING_MODE
-                CameraConfig.ColorCorrection.PRESET -> ColorCorrectionMode.PRESET_MODE
-            })
-        }
-
-    // get frame from CameraX and forward it to EffectsSDK pipeline
     override fun analyze(image: ImageProxy): Unit = image.use {
         if (skipNextFrame) { // next frame after changing camera have irrelevant rotation
             skipNextFrame = false
@@ -151,15 +93,7 @@ class CameraImpl @MainThread constructor(
             bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
         )
 
-        pipeline.process(bitmap)
-    }
-
-    // get frame from EffectsSDK pipeline and forward it to Rx
-    override fun onNewFrame(bitmap: Bitmap) {
-        framesCount++
-        frameSource.onNext(
-            FrameMapper.toAny(bitmap)
-        )
+        frameSource.onNext(FrameMapper.toAny(bitmap))
     }
 
     private fun start() {

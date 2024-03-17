@@ -1,7 +1,7 @@
 package com.tomsksoft.videoeffectsrecorder.domain
 
 class CameraRecordManager(
-    private val camera: Camera,
+    private val cameraManager: CameraManager,
     private val videoRecorder: VideoRecorder
 ) {
     companion object {
@@ -20,8 +20,8 @@ class CameraRecordManager(
 
     private fun startRecord() {
         record = videoRecorder.startRecord(
-            camera.frameSource,
-            camera.orientation,
+            cameraManager.frameSource,
+            cameraManager.orientation,
             BASE_NAME,
             MIME_TYPE
         )

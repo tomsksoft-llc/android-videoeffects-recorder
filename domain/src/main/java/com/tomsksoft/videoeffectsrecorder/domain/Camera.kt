@@ -8,8 +8,6 @@ interface Camera {
     var isEnabled: Boolean
     var direction: Direction
 
-    fun configure(config: CameraConfig)
-
     enum class Direction {
         FRONT,
         BACK
