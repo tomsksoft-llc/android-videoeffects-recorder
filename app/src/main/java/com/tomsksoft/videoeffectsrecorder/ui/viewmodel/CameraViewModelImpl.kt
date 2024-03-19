@@ -9,12 +9,11 @@ import androidx.lifecycle.viewModelScope
 import com.tomsksoft.videoeffectsrecorder.data.FrameMapper
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
+import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
-import com.tomsksoft.videoeffectsrecorder.domain.DEFAULT_CAMERA_CONFIG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,37 +26,34 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CameraViewModelImpl @Inject constructor(
-    private val camera: Camera,
     private val cameraRecordManager: CameraRecordManager,
+    private val cameraManager: CameraManager,
     app: Application
 ): AndroidViewModel(app), ICameraViewModel {
     companion object {
         private const val TAG = "Camera View Model"
     }
 
+    private var cameraConfig: CameraConfig
+        get() = cameraManager.cameraConfig.value!!
+        set(value) = cameraManager.cameraConfig.onNext(value)
+
     private val _cameraUiState : MutableStateFlow<CameraUiState>
             = MutableStateFlow(CameraUiState(
         flashMode = FlashMode.AUTO,
         expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
         primaryFiltersMode = PrimaryFiltersMode.NONE,
-        isSmartZoomEnabled = false,
-        isBeautifyEnabled = false,
-        isVideoRecording = false,
+        isSmartZoomEnabled = cameraConfig.smartZoom != null,
+        isBeautifyEnabled = cameraConfig.beautification != null,
+        isVideoRecording = cameraRecordManager.isRecording,
         isCameraInitialized = true, // TODO [tva] check if EffectsSDK is initialized
-        currentCameraConfig = DEFAULT_CAMERA_CONFIG
+        currentCameraConfig = cameraConfig // should it store duplicate?
     ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
-    private val _frame = BehaviorSubject.create<Bitmap>()
-    override val frame: Observable<Bitmap> = _frame.observeOn(AndroidSchedulers.mainThread())
-
-    init {
-        camera.apply {
-            frame.map(FrameMapper::fromAny).subscribe(_frame)
-            configure(cameraUiState.value.currentCameraConfig)
-            isEnabled = true
-        }
-    }
+    override val frame: Observable<Bitmap> = cameraManager.frameSource
+        .map(FrameMapper::fromAny)
+        .observeOn(AndroidSchedulers.mainThread())
 
     override fun setFlash(flashMode: FlashMode) {
         _cameraUiState.update{cameraUiState ->
@@ -95,7 +91,8 @@ class CameraViewModelImpl @Inject constructor(
                     }
             )
         }
-        camera.configure(cameraUiState.value.currentCameraConfig)
+
+        cameraConfig = cameraUiState.value.currentCameraConfig
     }
 
     override fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) {
@@ -125,7 +122,7 @@ class CameraViewModelImpl @Inject constructor(
             }
         }
 
-        camera.configure(cameraUiState.value.currentCameraConfig)
+        cameraConfig = cameraUiState.value.currentCameraConfig
     }
 
     override fun setBackground(bitmapStream: InputStream) {
@@ -143,7 +140,7 @@ class CameraViewModelImpl @Inject constructor(
             }
             if (_cameraUiState.value.primaryFiltersMode == PrimaryFiltersMode.REPLACE_BACK)
                 withContext(Dispatchers.Main) {
-                    camera.configure(cameraUiState.value.currentCameraConfig)
+                    cameraConfig = cameraUiState.value.currentCameraConfig
                 }
         }
     }
@@ -157,7 +154,7 @@ class CameraViewModelImpl @Inject constructor(
                 )
             )
         }
-        camera.configure(cameraUiState.value.currentCameraConfig)
+        cameraConfig = cameraUiState.value.currentCameraConfig
     }
 
     override fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode) {
@@ -169,8 +166,8 @@ class CameraViewModelImpl @Inject constructor(
     }
 
     override fun flipCamera() {
-        camera.direction =
-            if (camera.direction == Camera.Direction.BACK)
+        cameraManager.direction =
+            if (cameraManager.direction == Camera.Direction.BACK)
                 Camera.Direction.FRONT
             else
                 Camera.Direction.BACK
@@ -211,7 +208,7 @@ class CameraViewModelImpl @Inject constructor(
                 )
             )
         }
-        camera.configure(cameraUiState.value.currentCameraConfig)
+        cameraConfig = cameraUiState.value.currentCameraConfig
     }
 
     override fun setZoomPower(value: Float) {
@@ -222,7 +219,8 @@ class CameraViewModelImpl @Inject constructor(
                 )
             )
         }
-        camera.configure(cameraUiState.value.currentCameraConfig)
+
+        cameraConfig = cameraUiState.value.currentCameraConfig
     }
 
     override fun setBeautifyPower(value: Float) {
@@ -234,7 +232,7 @@ class CameraViewModelImpl @Inject constructor(
             )
         }
 
-        camera.configure(cameraUiState.value.currentCameraConfig)
+        cameraConfig = cameraUiState.value.currentCameraConfig
     }
 
     override fun setColorCorrectionMode(mode: CameraConfig.ColorCorrection) {
@@ -246,6 +244,7 @@ class CameraViewModelImpl @Inject constructor(
                 )
             )
         }
-        camera.configure(cameraUiState.value.currentCameraConfig)
+
+        cameraConfig = cameraUiState.value.currentCameraConfig
     }
 }

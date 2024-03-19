@@ -1,16 +1,13 @@
 package com.tomsksoft.videoeffectsrecorder.hilt
 
-import android.content.Context
-import com.tomsksoft.videoeffectsrecorder.BuildConfig
-import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
-import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
+import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -19,16 +16,11 @@ import javax.inject.Singleton
 object ManagersModule {
     @Provides
     @Singleton
-    fun provideCamera(@ApplicationContext context: Context): Camera =
-        CameraImpl(context, Camera.Direction.BACK)
+    fun provideCameraManager(camera: Camera, frameProcessor: FrameProcessor) =
+        CameraManager(camera, frameProcessor)
 
     @Provides
     @Singleton
-    fun provideVideoRecorder(@ApplicationContext context: Context): VideoRecorder =
-        VideoRecorderImpl(context, BuildConfig.RECORDS_DIRECTORY)
-
-    @Provides
-    @Singleton
-    fun provideRecordManager(camera: Camera, videoRecorder: VideoRecorder) =
-        CameraRecordManager(camera, videoRecorder)
+    fun provideRecordManager(cameraManager: CameraManager, videoRecorder: VideoRecorder) =
+        CameraRecordManager(cameraManager, videoRecorder)
 }

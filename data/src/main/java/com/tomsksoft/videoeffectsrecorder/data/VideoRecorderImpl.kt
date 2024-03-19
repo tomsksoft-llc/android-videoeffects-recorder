@@ -16,9 +16,9 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
+import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 
 class VideoRecorderImpl(
     private val context: Context,
@@ -28,15 +28,17 @@ class VideoRecorderImpl(
         private const val TAG = "VideoRecorder"
     }
 
-    override val frame: BehaviorSubject<Any> = BehaviorSubject.create()
-    override val degree: BehaviorSubject<Int> = BehaviorSubject.create()
-
     private val contentResolver: ContentResolver
         get() = context.contentResolver
 
-    override fun startRecord(filename: String, mimeType: String): AutoCloseable {
+    override fun startRecord(
+        frameSource: Observable<Any>,
+        orientation: Int,
+        filename: String,
+        mimeType: String
+    ): AutoCloseable {
         val (descriptor, uri) = createFile(filename, mimeType)
-        return Record(descriptor, uri)
+        return Record(frameSource, orientation, descriptor, uri)
     }
 
     @SuppressLint("Recycle") // ParcelFileDescriptor will be freed by Record
@@ -55,6 +57,8 @@ class VideoRecorderImpl(
     }
 
     private inner class Record(
+        frameSource: Observable<Any>,
+        private val orientation: Int,
         private val parcelDescriptor: ParcelFileDescriptor,
         private val file: Uri
     ): AutoCloseable {
@@ -70,7 +74,7 @@ class VideoRecorderImpl(
         private var disposableFrameSubscription: Disposable? = null
 
         init {
-            disposableFrameSubscription = frame.observeOn(Schedulers.io()).subscribe { frame ->
+            disposableFrameSubscription = frameSource.observeOn(Schedulers.io()).subscribe { frame ->
                 val bitmap = FrameMapper.fromAny(frame)
                 val (width, height) = bitmap.width to bitmap.height
                 // first frame setups MediaRecorder with appropriate video size and orientation
@@ -139,7 +143,7 @@ class VideoRecorderImpl(
                 setVideoFrameRate(30) // use also setCaptureRate() for time lapse
                 setVideoSize(width, height)
 
-                setOrientationHint(degree.value ?: 0)
+                setOrientationHint(orientation)
                 setOutputFile(parcelDescriptor.fileDescriptor)
 
                 prepare()
