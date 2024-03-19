@@ -1,19 +1,17 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.app.Application
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import androidx.camera.core.CameraSelector
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.FrameMapper
-import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
+import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.DEFAULT_CAMERA_CONFIG
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
@@ -25,10 +23,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.InputStream
+import javax.inject.Inject
 
-class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewModel {
+@HiltViewModel
+class CameraViewModelImpl @Inject constructor(
+    private val camera: Camera,
+    private val cameraRecordManager: CameraRecordManager,
+    app: Application
+): AndroidViewModel(app), ICameraViewModel {
     companion object {
-        const val RECORDS_DIRECTORY = "Effects"
         private const val TAG = "Camera View Model"
     }
 
@@ -47,15 +50,6 @@ class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewM
 
     private val _frame = BehaviorSubject.create<Bitmap>()
     override val frame: Observable<Bitmap> = _frame.observeOn(AndroidSchedulers.mainThread())
-
-    private val context: Context
-        get() = getApplication<Application>().applicationContext
-
-    private val camera = CameraImpl(context, CameraSelector.DEFAULT_BACK_CAMERA)
-    private val cameraRecordManager = CameraRecordManager(
-        camera,
-        VideoRecorderImpl(context, RECORDS_DIRECTORY)
-    )
 
     init {
         camera.apply {
@@ -175,11 +169,11 @@ class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewM
     }
 
     override fun flipCamera() {
-        camera.cameraSelector =
-            if (camera.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
-                CameraSelector.DEFAULT_FRONT_CAMERA
+        camera.direction =
+            if (camera.direction == Camera.Direction.BACK)
+                Camera.Direction.FRONT
             else
-                CameraSelector.DEFAULT_BACK_CAMERA
+                Camera.Direction.BACK
     }
 
     override fun captureImage() {
