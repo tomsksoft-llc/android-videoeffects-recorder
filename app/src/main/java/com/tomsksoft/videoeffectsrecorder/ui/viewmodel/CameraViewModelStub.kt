@@ -2,7 +2,6 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.graphics.Bitmap
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.DEFAULT_CAMERA_CONFIG
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,10 +17,9 @@ object CameraViewModelStub: ICameraViewModel {
         isBeautifyEnabled = false,
         isVideoRecording = false,
         isCameraInitialized = true,
-        //currentCameraConfig = DEFAULT_CAMERA_CONFIG
     ))
     override val frame: Observable<Bitmap> = BehaviorSubject.create()
-    override val cameraConfig: StateFlow<CameraConfig> = MutableStateFlow(CameraConfig())
+    override val cameraConfigData: CameraConfig = CameraConfig()
 
     override fun setFlash(flashMode: FlashMode) = throw unimplementedError()
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) = throw unimplementedError()

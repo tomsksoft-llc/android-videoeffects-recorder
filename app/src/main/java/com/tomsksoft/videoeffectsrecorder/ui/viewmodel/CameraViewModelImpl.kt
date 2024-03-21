@@ -1,23 +1,19 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.app.Application
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import androidx.camera.core.CameraSelector
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.FrameMapper
-import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
+import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
+import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
-import com.tomsksoft.videoeffectsrecorder.domain.DEFAULT_CAMERA_CONFIG
-import com.tomsksoft.videoeffectsrecorder.domain.PipelineConfigManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,40 +22,40 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.InputStream
+import javax.inject.Inject
 
-class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewModel {
+@HiltViewModel
+class CameraViewModelImpl @Inject constructor(
+    private val cameraRecordManager: CameraRecordManager,
+    private val cameraManager: CameraManager,
+    app: Application
+): AndroidViewModel(app), ICameraViewModel {
     companion object {
-        const val RECORDS_DIRECTORY = "Effects"
         private const val TAG = "Camera View Model"
     }
 
+    private var cameraConfig: CameraConfig
+        get() = cameraManager.cameraConfig.value!!
+        set(value) = cameraManager.cameraConfig.onNext(value)
+
+    override val cameraConfigData: CameraConfig
+        get() = cameraConfig
+
     private val _cameraUiState : MutableStateFlow<CameraUiState>
-            = MutableStateFlow(CameraUiState())
+            = MutableStateFlow(CameraUiState(
+        flashMode = FlashMode.AUTO,
+        expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
+        primaryFiltersMode = PrimaryFiltersMode.NONE,
+        isSmartZoomEnabled = cameraConfig.smartZoom != null,
+        isBeautifyEnabled = cameraConfig.beautification != null,
+        isVideoRecording = cameraRecordManager.isRecording,
+        isCameraInitialized = true // TODO [tva] check if EffectsSDK is initialized
+    ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
-    private val _frame = BehaviorSubject.create<Bitmap>()
-    override val frame: Observable<Bitmap> = _frame.observeOn(AndroidSchedulers.mainThread())
-
-    private val context: Context
-        get() = getApplication<Application>().applicationContext
-
-    private val camera = CameraImpl(context, CameraSelector.DEFAULT_BACK_CAMERA)
-    private val cameraRecordManager = CameraRecordManager(
-        camera,
-        VideoRecorderImpl(context, RECORDS_DIRECTORY)
-    )
-
-    private val pipelineConfigManager = PipelineConfigManager(camera)
-    override val cameraConfig: StateFlow<CameraConfig> = pipelineConfigManager.cameraConfig
-
-    init {
-        camera.apply {
-            frame.map(FrameMapper::fromAny).subscribe(_frame)
-            //configure(cameraConfig.value)
-            isEnabled = true
-        }
-        pipelineConfigManager.configurePipeline()
-    }
+    override val frame: Observable<Bitmap> = cameraManager.frameSource
+        .map(FrameMapper::fromAny)
+        .observeOn(AndroidSchedulers.mainThread())
 
     override fun setFlash(flashMode: FlashMode) {
         _cameraUiState.update{cameraUiState ->
@@ -77,21 +73,21 @@ class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewM
             )
         }
         when (filtersMode) {
-            PrimaryFiltersMode.BLUR -> pipelineConfigManager.configurePipeline(
+            PrimaryFiltersMode.BLUR -> cameraConfig = cameraConfig.copy(
                 backgroundMode = CameraConfig.BackgroundMode.Blur,
                 blurPower = 0f
             )
-            PrimaryFiltersMode.REPLACE_BACK -> pipelineConfigManager.configurePipeline(
+            PrimaryFiltersMode.REPLACE_BACK -> cameraConfig = cameraConfig.copy(
                 backgroundMode =
-                    if (cameraConfig.value.background == null)
+                    if (cameraConfig.background == null)
                         CameraConfig.BackgroundMode.Remove
                     else CameraConfig.BackgroundMode.Replace
             )
-            PrimaryFiltersMode.COLOR_CORRECTION -> pipelineConfigManager.configurePipeline(
+            PrimaryFiltersMode.COLOR_CORRECTION -> cameraConfig = cameraConfig.copy(
                 backgroundMode = CameraConfig.BackgroundMode.Regular,
                 colorCorrection = CameraConfig.ColorCorrection.COLOR_GRADING
             )
-            PrimaryFiltersMode.NONE -> pipelineConfigManager.configurePipeline(
+            PrimaryFiltersMode.NONE -> cameraConfig = cameraConfig.copy(
                 backgroundMode = CameraConfig.BackgroundMode.Regular,
                 colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
             )
@@ -115,15 +111,15 @@ class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewM
             }
         }
         when(filtersMode) {
-            SecondaryFiltersMode.BEAUTIFY -> pipelineConfigManager.configurePipeline(
+            SecondaryFiltersMode.BEAUTIFY -> cameraConfig = cameraConfig.copy(
                 beautification =
-                    if (cameraUiState.value.isBeautifyEnabled) 0
-                    else cameraConfig.value.beautification
+                    if (!cameraUiState.value.isBeautifyEnabled) 0
+                    else cameraConfig.beautification
             )
-            SecondaryFiltersMode.SMART_ZOOM -> pipelineConfigManager.configurePipeline(
+            SecondaryFiltersMode.SMART_ZOOM -> cameraConfig = cameraConfig.copy(
                 smartZoom =
-                    if (cameraUiState.value.isSmartZoomEnabled) 0
-                    else cameraConfig.value.smartZoom
+                    if (!cameraUiState.value.isSmartZoomEnabled) 0
+                    else cameraConfig.smartZoom
             )
         }
     }
@@ -135,7 +131,7 @@ class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewM
             }
             if (_cameraUiState.value.primaryFiltersMode == PrimaryFiltersMode.REPLACE_BACK)
                 withContext(Dispatchers.Main) {
-                    pipelineConfigManager.configurePipeline(
+                    cameraConfig = cameraConfig.copy(
                         background = background,
                         backgroundMode = CameraConfig.BackgroundMode.Replace
                     )
@@ -144,7 +140,7 @@ class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewM
     }
 
     override fun removeBackground() {
-        pipelineConfigManager.configurePipeline(
+        cameraConfig = cameraConfig.copy(
             background = null,
             backgroundMode = CameraConfig.BackgroundMode.Remove
         )
@@ -159,11 +155,11 @@ class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewM
     }
 
     override fun flipCamera() {
-        camera.cameraSelector =
-            if (camera.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
-                CameraSelector.DEFAULT_FRONT_CAMERA
+        cameraManager.direction =
+            if (cameraManager.direction == Camera.Direction.BACK)
+                Camera.Direction.FRONT
             else
-                CameraSelector.DEFAULT_BACK_CAMERA
+                Camera.Direction.BACK
     }
 
     override fun captureImage() {
@@ -194,21 +190,21 @@ class CameraViewModelImpl(app: Application): AndroidViewModel(app), ICameraViewM
     }
 
     override fun setBlurPower(value: Float) {
-        pipelineConfigManager.configurePipeline(blurPower = value)
+        cameraConfig = cameraConfig.copy(blurPower = value)
     }
 
     override fun setZoomPower(value: Float) {
-        pipelineConfigManager.configurePipeline(
+        cameraConfig = cameraConfig.copy(
             smartZoom = (value*100).toInt()
         )
     }
 
     override fun setBeautifyPower(value: Float) {
-        pipelineConfigManager.configurePipeline(beautification = (value*100).toInt())
+        cameraConfig = cameraConfig.copy(beautification = (value*100).toInt())
     }
 
     override fun setColorCorrectionMode(mode: CameraConfig.ColorCorrection) {
         Log.d(TAG, "${mode.name} was chosen as color correction mode")
-        pipelineConfigManager.configurePipeline(colorCorrection = mode)
+        cameraConfig = cameraConfig.copy(colorCorrection = mode)
     }
 }

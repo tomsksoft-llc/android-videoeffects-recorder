@@ -72,7 +72,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
@@ -114,7 +114,7 @@ fun CameraScreen() {
 	}
 
 	// ui
-	CameraUi(viewModel<CameraViewModelImpl>())
+	CameraUi(hiltViewModel<CameraViewModelImpl>())
 }
 
 @Preview
@@ -128,7 +128,6 @@ fun CameraUi(viewModel: ICameraViewModel) {
 	val context = LocalContext.current
 	val frame by viewModel.frame.subscribeAsState(null)
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
-	val cameraConfig: CameraConfig by viewModel.cameraConfig.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
 	val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
 		if (uri != null)
@@ -181,7 +180,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 					) {
 						SecondaryEffectsOptions(
 							cameraUiState = cameraUiState,
-							cameraConfig = cameraConfig,
+							cameraConfig = viewModel.cameraConfigData,
 							onBeautifySliderChange = viewModel::setBeautifyPower,
 							onSmartZoomSliderChange = viewModel::setZoomPower,
 							modifier = Modifier
@@ -194,7 +193,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 						}
 						PrimaryEffectsOptions(
 							cameraUiState = cameraUiState,
-							cameraConfig = cameraConfig,
+							cameraConfig = viewModel.cameraConfigData,
 							snackbarHostState = snackbarHostState,
 							onPhotoPickClick = {
 								photoPickerLauncher.launch(

@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
 
 interface ICameraViewModel {
-    val cameraConfig: StateFlow<CameraConfig>
     val cameraUiState: StateFlow<CameraUiState>
     val frame: Observable<Bitmap>
 
@@ -25,4 +24,5 @@ interface ICameraViewModel {
     fun setZoomPower(value: Float)
     fun setBeautifyPower(value: Float)
     fun setColorCorrectionMode(mode: CameraConfig.ColorCorrection)
+    val cameraConfigData: CameraConfig
 }

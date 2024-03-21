@@ -1,7 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.DEFAULT_CAMERA_CONFIG
 
 /**
  * Defines the current state of the CameraScreen

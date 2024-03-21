@@ -27,5 +27,3 @@ data class CameraConfig(
         Blur
     }
 }
-
-val DEFAULT_CAMERA_CONFIG = CameraConfig()
