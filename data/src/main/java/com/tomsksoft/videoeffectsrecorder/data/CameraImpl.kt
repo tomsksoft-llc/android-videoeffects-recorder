@@ -3,7 +3,6 @@ package com.tomsksoft.videoeffectsrecorder.data
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.util.Log
 import androidx.annotation.MainThread
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -18,8 +17,6 @@ import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.Timer
-import java.util.TimerTask
 import java.util.concurrent.Executors
 import kotlin.math.abs
 

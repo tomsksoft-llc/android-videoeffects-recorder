@@ -24,4 +24,5 @@ interface ICameraViewModel {
     fun setZoomPower(value: Float)
     fun setBeautifyPower(value: Float)
     fun setColorCorrectionMode(mode: CameraConfig.ColorCorrection)
+    val cameraConfigData: CameraConfig
 }

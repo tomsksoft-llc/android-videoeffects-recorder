@@ -73,7 +73,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
@@ -181,6 +180,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 					) {
 						SecondaryEffectsOptions(
 							cameraUiState = cameraUiState,
+							cameraConfig = viewModel.cameraConfigData,
 							onBeautifySliderChange = viewModel::setBeautifyPower,
 							onSmartZoomSliderChange = viewModel::setZoomPower,
 							modifier = Modifier
@@ -193,6 +193,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 						}
 						PrimaryEffectsOptions(
 							cameraUiState = cameraUiState,
+							cameraConfig = viewModel.cameraConfigData,
 							snackbarHostState = snackbarHostState,
 							onPhotoPickClick = {
 								photoPickerLauncher.launch(
@@ -223,6 +224,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 @Composable
 fun PrimaryEffectsOptions(
 	cameraUiState: CameraUiState,
+	cameraConfig: CameraConfig,
 	onPhotoPickClick: () -> Unit,
 	onRemoveClick: () -> Unit,
 	onBlurSliderChange: (Float) -> Unit,
@@ -254,7 +256,7 @@ fun PrimaryEffectsOptions(
 
 			PrimaryFiltersMode.BLUR -> {
 				Slider(
-					value = cameraUiState.currentCameraConfig.blurPower.toFloat(),
+					value = cameraConfig.blurPower.toFloat(),
 					onValueChange = onBlurSliderChange,
 					modifier = Modifier
 						.padding(6.dp)
@@ -272,10 +274,10 @@ fun PrimaryEffectsOptions(
 						modifier = Modifier
 							.padding(12.dp),
 						backgroundColor =
-							if (cameraUiState.currentCameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_CORRECTION) Color.Yellow
+							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_CORRECTION) Color.Yellow
 							else MaterialTheme.colorScheme.surface,
 						tint =
-							if (cameraUiState.currentCameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_CORRECTION) Color.Black
+							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_CORRECTION) Color.Black
 							else MaterialTheme.colorScheme.surfaceDim,
 					)
 					RoundedButton(
@@ -289,10 +291,10 @@ fun PrimaryEffectsOptions(
 						modifier = Modifier
 							.padding(12.dp),
 						backgroundColor =
-							if (cameraUiState.currentCameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_GRADING) Color.Yellow
+							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_GRADING) Color.Yellow
 							else MaterialTheme.colorScheme.surface,
 						tint =
-							if (cameraUiState.currentCameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_GRADING) Color.Black
+							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_GRADING) Color.Black
 							else MaterialTheme.colorScheme.surfaceDim
 
 					)
@@ -307,10 +309,10 @@ fun PrimaryEffectsOptions(
 						modifier = Modifier
 							.padding(12.dp),
 						backgroundColor =
-							if (cameraUiState.currentCameraConfig.colorCorrection == CameraConfig.ColorCorrection.PRESET) Color.Yellow
+							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.PRESET) Color.Yellow
 							else MaterialTheme.colorScheme.surface,
 						tint =
-							if (cameraUiState.currentCameraConfig.colorCorrection == CameraConfig.ColorCorrection.PRESET) Color.Black
+							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.PRESET) Color.Black
 							else MaterialTheme.colorScheme.surfaceDim
 					)
 			}
@@ -322,6 +324,7 @@ fun PrimaryEffectsOptions(
 @Composable
 fun SecondaryEffectsOptions(
 	cameraUiState: CameraUiState,
+	cameraConfig: CameraConfig,
 	onBeautifySliderChange: (Float) -> Unit,
 	onSmartZoomSliderChange: (Float) -> Unit,
 	modifier: Modifier
@@ -344,7 +347,7 @@ fun SecondaryEffectsOptions(
 				)
 				Slider(
 					onValueChange = onBeautifySliderChange,
-					value = ((cameraUiState.currentCameraConfig.beautification ?: 0)/100f),
+					value = ((cameraConfig.beautification ?: 0)/100f),
 					modifier = Modifier
 						.weight(3f)
 						.padding(3.dp)
@@ -364,7 +367,7 @@ fun SecondaryEffectsOptions(
 						.padding(3.dp)
 				)
 				Slider(
-					value = (cameraUiState.currentCameraConfig.smartZoom ?: 0)/100f,
+					value = (cameraConfig.smartZoom ?: 0)/100f,
 					onValueChange = onSmartZoomSliderChange,
 					modifier = Modifier
 						.weight(3f)
@@ -727,123 +730,4 @@ fun FiltersCarousel (
 		}
 	}
 
-}
-
-@Composable
-private fun EffectsOptions(
-	cameraUiState: CameraUiState,
-	onPhotoPickClick: () -> Unit,
-	onRemoveClick:  () -> Unit,
-	onBlurSliderChange: (Float) -> Unit,
-	onBeautifySliderChange: (Float) -> Unit,
-	onSmartZoomSliderChange: (Float) -> Unit,
-	onColorCorrectionModeChange: (CameraConfig.ColorCorrection) -> Unit
-) {
-	Box(
-		modifier = Modifier
-			.fillMaxSize()
-	) {
-		/*when (cameraUiState.primaryFiltersMode) {
-			PrimaryFiltersMode.REPLACE_BACK -> {
-				RoundedButton(
-					painter = painterResource(R.drawable.ic_photo),
-					modifier = Modifier
-						.padding(24.dp)
-						.align(Alignment.BottomStart),
-					onClick = onPhotoPickClick
-				)
-				RoundedButton(
-					painter = painterResource(R.drawable.ic_clear),
-					modifier = Modifier
-						.padding(24.dp)
-						.align(Alignment.BottomEnd),
-					onClick = onRemoveClick
-				)
-			}
-
-			PrimaryFiltersMode.BLUR -> {
-				Slider(
-					value = cameraUiState.currentCameraConfig.blurPower.toFloat(),
-					onValueChange = onBlurSliderChange,
-					modifier = Modifier
-						.align(Alignment.BottomCenter)
-						.padding(24.dp)
-				)
-			}
-			PrimaryFiltersMode.COLOR_CORRECTION -> {
-				Row(
-					modifier = Modifier
-						.align(Alignment.BottomCenter)
-						.fillMaxWidth(),
-					horizontalArrangement = Arrangement.SpaceBetween
-				) {
-					RoundedButton(
-						painter = painterResource(R.drawable.ic_clear),
-						onClick = { onColorCorrectionModeChange(CameraConfig.ColorCorrection.COLOR_CORRECTION) },
-						modifier = Modifier
-							.padding(24.dp)
-					)
-					RoundedButton(
-						painter = painterResource(R.drawable.ic_clear),
-						onClick = { onColorCorrectionModeChange(CameraConfig.ColorCorrection.COLOR_GRADING) },
-						modifier = Modifier
-							.padding(24.dp)
-					)
-					RoundedButton(
-						painter = painterResource(R.drawable.ic_clear),
-						onClick = { onColorCorrectionModeChange(CameraConfig.ColorCorrection.PRESET) },
-						modifier = Modifier
-							.padding(24.dp)
-					)
-				}
-			}
-			PrimaryFiltersMode.NONE -> {}
-		}*/
-		/*Column(
-			Modifier.align(Alignment.TopCenter)
-		) {
-			if (cameraUiState.isBeautifyEnabled) {
-				Row(
-					verticalAlignment = Alignment.CenterVertically
-				) {
-					Icon(
-						painter = painterResource(id = R.drawable.ic_filter_beautify),
-						contentDescription = null,
-						tint = Color.White,
-						modifier = Modifier
-							.weight(1f)
-							.padding(3.dp)
-					)
-					Slider(
-						onValueChange = onBeautifySliderChange,
-						value = ((cameraUiState.currentCameraConfig.beautification ?: 0)/100f),
-						modifier = Modifier
-							.weight(3f)
-							.padding(3.dp)
-					)
-				}
-			}
-			if (cameraUiState.isSmartZoomEnabled) {
-				Row(
-					verticalAlignment = Alignment.CenterVertically
-				) {
-					Icon(
-						painter = painterResource(id = R.drawable.ic_filter_smart_zoom),
-						contentDescription = null,
-						tint = Color.White,
-						modifier = Modifier
-							.weight(1f)
-							.padding(3.dp)
-					)
-					Slider(
-						value = (cameraUiState.currentCameraConfig.smartZoom ?: 0)/100f,
-						onValueChange = onSmartZoomSliderChange,
-						modifier = Modifier
-							.weight(3f)
-							.padding(3.dp)
-					)
-				}
-			}
-		}*/
-	}
 }
