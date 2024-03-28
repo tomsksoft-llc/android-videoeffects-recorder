@@ -29,5 +29,6 @@ class CameraRecordManager(
 
     private fun stopRecord() {
         record!!.close()
+        record = null
     }
 }
