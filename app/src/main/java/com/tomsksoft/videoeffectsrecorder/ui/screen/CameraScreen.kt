@@ -710,7 +710,7 @@ fun FiltersCarousel (
 			val horizontalPadding = 10.dp
 			var textSize by remember { mutableStateOf(IntSize.Zero)	}
 			Text(
-				text = stringResource(id = filters[index % filters.size].description),
+				text = stringResource(id = filters[index % filters.size].resourceId),
 				color = if (filters[index % filters.size] == primaryFiltersModeSelected) Color.Yellow
 						else MaterialTheme.colorScheme.onPrimary,
 				modifier = Modifier
