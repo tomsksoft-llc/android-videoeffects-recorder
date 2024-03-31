@@ -2,12 +2,18 @@ package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import android.Manifest
 import android.graphics.Bitmap
+import android.view.LayoutInflater
+import android.view.Surface
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -72,6 +78,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -126,7 +133,6 @@ fun CameraPreview() {
 @Composable
 fun CameraUi(viewModel: ICameraViewModel) {
 	val context = LocalContext.current
-	val frame by viewModel.frame.subscribeAsState(null)
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
 	val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -151,7 +157,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 	else {
 		Box {
 			// effects sdk camera feed; stays behind all other elements
-			EffectsCameraPreview(frame, snackbarHostState)
+			EffectsCameraPreview(snackbarHostState, viewModel::setSurface)
 
 			// elements of ui on top of the camera feed
 			Column(
@@ -419,8 +425,8 @@ private fun RoundedButton(
 
 @Composable
 private fun EffectsCameraPreview(
-	frame: Bitmap?,
-	snackbarHostState: SnackbarHostState
+	snackbarHostState: SnackbarHostState,
+	updateSurface: (Surface?) -> Unit
 ){
 	Box(
 		contentAlignment = Alignment.Center,
@@ -428,8 +434,18 @@ private fun EffectsCameraPreview(
 			.fillMaxSize()
 			.background(MaterialTheme.colorScheme.onSurface),
 	){
-
-		if (frame == null){
+		AndroidView(factory = { context ->
+			val view = LayoutInflater.from(context)
+				.inflate(R.layout.preview, FrameLayout(context), false)
+					as SurfaceView
+			view.holder.addCallback(object: SurfaceHolder.Callback {
+				override fun surfaceCreated(holder: SurfaceHolder) = updateSurface(holder.surface)
+				override fun surfaceChanged(holder: SurfaceHolder, p1: Int, p2: Int, p3: Int) = Unit
+				override fun surfaceDestroyed(holder: SurfaceHolder) = updateSurface(null)
+			})
+			view
+		})
+		/*if (frame == null) {
 			val snackbarMessage = stringResource(id = R.string.camera_not_ready)
 			LaunchedEffect(snackbarHostState){
 				snackbarHostState.showSnackbar(snackbarMessage)
@@ -442,15 +458,7 @@ private fun EffectsCameraPreview(
 					color = MaterialTheme.colorScheme.surface,
 				)
 			}
-		}
-		else {
-			Image(
-				bitmap = frame.asImageBitmap(),
-				contentDescription = null,
-				contentScale = ContentScale.FillWidth,
-				modifier = Modifier.fillMaxSize()
-			)
-		}
+		}*/
 	}
 }
 

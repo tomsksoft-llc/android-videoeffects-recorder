@@ -2,39 +2,40 @@ package com.tomsksoft.videoeffectsrecorder.data
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Log
+import android.view.Surface
 import com.effectssdk.tsvb.EffectsSDK
 import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
-import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
 import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 import io.reactivex.rxjava3.subjects.PublishSubject
 
-class FrameProcessorImpl(context: Context): FrameProcessor, OnFrameAvailableListener, AutoCloseable {
+class FrameProcessorImpl(context: Context): FrameProcessor, AutoCloseable {
     companion object {
         private val factory = EffectsSDK.createSDKFactory()
     }
 
     override val frameSource = PublishSubject.create<Any>()
-    override val processedFrame = BehaviorSubject.create<Any>()
 
-    private val pipeline = factory.createImagePipeline(context)
+    private val pipeline = factory.createImagePipeline(
+        context,
+        fpsListener = { Log.d("FPS", it.toString()) }
+    )
     private val disposable = frameSource
         .map(FrameMapper::fromAny)
         .subscribe(pipeline::process)
 
     init {
         pipeline.setSegmentationGap(1)
-        pipeline.setOnFrameAvailableListener(this)
     }
-
-    override fun onNewFrame(bitmap: Bitmap) = processedFrame.onNext(FrameMapper.toAny(bitmap))
 
     override fun close() {
         disposable.dispose()
         pipeline.release()
     }
+
+    override fun setSurface(surface: Surface?) = pipeline.setOutputSurface(surface)
 
     override fun configure(cameraConfig: CameraConfig): Unit =
         pipeline.run {

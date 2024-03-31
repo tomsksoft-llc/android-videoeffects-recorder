@@ -1,9 +1,7 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
-import android.graphics.Bitmap
+import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
@@ -18,9 +16,9 @@ object CameraViewModelStub: ICameraViewModel {
         isVideoRecording = false,
         isCameraInitialized = true,
     ))
-    override val frame: Observable<Bitmap> = BehaviorSubject.create()
     override val cameraConfigData: CameraConfig = CameraConfig()
 
+    override fun setSurface(surface: Surface?) = throw unimplementedError()
     override fun setFlash(flashMode: FlashMode) = throw unimplementedError()
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) = throw unimplementedError()
     override fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) = throw unimplementedError()

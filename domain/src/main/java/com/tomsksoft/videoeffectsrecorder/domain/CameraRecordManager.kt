@@ -18,16 +18,16 @@ class CameraRecordManager(
             if (value) startRecord() else stopRecord()
         }
 
-    private fun startRecord() {
-        record = videoRecorder.startRecord(
+    private fun startRecord() { // TODO [tva] forward the surface from MediaRecorder to FrameProcessor
+        /*record = videoRecorder.startRecord(
             cameraManager.frameSource,
             cameraManager.orientation,
             BASE_NAME,
             MIME_TYPE
-        )
+        )*/
     }
 
     private fun stopRecord() {
-        record!!.close()
+        record?.close()
     }
 }

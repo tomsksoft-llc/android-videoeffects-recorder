@@ -1,19 +1,16 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.app.Application
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import android.view.Surface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.tomsksoft.videoeffectsrecorder.data.FrameMapper
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.core.Observable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,9 +50,7 @@ class CameraViewModelImpl @Inject constructor(
     ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
-    override val frame: Observable<Bitmap> = cameraManager.frameSource
-        .map(FrameMapper::fromAny)
-        .observeOn(AndroidSchedulers.mainThread())
+    override fun setSurface(surface: Surface?) = cameraManager.setSurface(surface)
 
     override fun setFlash(flashMode: FlashMode) {
         _cameraUiState.update{cameraUiState ->
