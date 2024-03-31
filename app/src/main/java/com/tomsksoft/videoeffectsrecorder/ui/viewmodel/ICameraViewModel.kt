@@ -2,6 +2,7 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
+import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
 import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
 
@@ -22,6 +23,6 @@ interface ICameraViewModel {
     fun setBlurPower(value: Float)
     fun setZoomPower(value: Float)
     fun setBeautifyPower(value: Float)
-    fun setColorCorrectionMode(mode: CameraConfig.ColorCorrection)
+    fun setColorCorrectionMode(mode: ColorCorrection)
     val cameraConfigData: CameraConfig
 }

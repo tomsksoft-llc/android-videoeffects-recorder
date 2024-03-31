@@ -6,10 +6,12 @@ import android.util.Log
 import android.view.Surface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.tomsksoft.videoeffectsrecorder.domain.BackgroundMode
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
+import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,8 +45,8 @@ class CameraViewModelImpl @Inject constructor(
         flashMode = FlashMode.AUTO,
         expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
         primaryFiltersMode = PrimaryFiltersMode.NONE,
-        isSmartZoomEnabled = cameraConfig.smartZoom != null,
-        isBeautifyEnabled = cameraConfig.beautification != null,
+        smartZoom = cameraConfig.smartZoom,
+        beautification = cameraConfig.beautification,
         isVideoRecording = cameraRecordManager.isRecording,
         isCameraInitialized = true // TODO [tva] check if EffectsSDK is initialized
     ))
@@ -69,22 +71,21 @@ class CameraViewModelImpl @Inject constructor(
         }
         when (filtersMode) {
             PrimaryFiltersMode.BLUR -> cameraConfig = cameraConfig.copy(
-                backgroundMode = CameraConfig.BackgroundMode.Blur,
-                blurPower = 0f
+                backgroundMode = BackgroundMode.Blur
             )
             PrimaryFiltersMode.REPLACE_BACK -> cameraConfig = cameraConfig.copy(
                 backgroundMode =
                     if (cameraConfig.background == null)
-                        CameraConfig.BackgroundMode.Remove
-                    else CameraConfig.BackgroundMode.Replace
+                        BackgroundMode.Remove
+                    else BackgroundMode.Replace
             )
             PrimaryFiltersMode.COLOR_CORRECTION -> cameraConfig = cameraConfig.copy(
-                backgroundMode = CameraConfig.BackgroundMode.Regular,
-                colorCorrection = CameraConfig.ColorCorrection.COLOR_GRADING
+                backgroundMode = BackgroundMode.Regular,
+                colorCorrection = ColorCorrection.COLOR_GRADING
             )
             PrimaryFiltersMode.NONE -> cameraConfig = cameraConfig.copy(
-                backgroundMode = CameraConfig.BackgroundMode.Regular,
-                colorCorrection = CameraConfig.ColorCorrection.NO_FILTER
+                backgroundMode = BackgroundMode.Regular,
+                colorCorrection = ColorCorrection.NO_FILTER
             )
         }
     }
@@ -94,27 +95,23 @@ class CameraViewModelImpl @Inject constructor(
             when(filtersMode) {
                 SecondaryFiltersMode.BEAUTIFY -> {
                     cameraUiState.copy(
-                        isBeautifyEnabled = !cameraUiState.isBeautifyEnabled
+                        beautification = if (cameraUiState.beautification == null) 25 else null
                     )
                 }
 
                 SecondaryFiltersMode.SMART_ZOOM -> {
                     cameraUiState.copy(
-                        isSmartZoomEnabled = !cameraUiState.isSmartZoomEnabled
+                        smartZoom = if (cameraUiState.smartZoom == null) 25 else null
                     )
                 }
             }
         }
-        when(filtersMode) {
-            SecondaryFiltersMode.BEAUTIFY -> cameraConfig = cameraConfig.copy(
-                beautification =
-                    if (!cameraUiState.value.isBeautifyEnabled) 0
-                    else cameraConfig.beautification
+        cameraConfig = when(filtersMode) {
+            SecondaryFiltersMode.BEAUTIFY -> cameraConfig.copy(
+                beautification = cameraConfig.beautification
             )
-            SecondaryFiltersMode.SMART_ZOOM -> cameraConfig = cameraConfig.copy(
-                smartZoom =
-                    if (!cameraUiState.value.isSmartZoomEnabled) 0
-                    else cameraConfig.smartZoom
+            SecondaryFiltersMode.SMART_ZOOM -> cameraConfig.copy(
+                smartZoom = cameraConfig.smartZoom
             )
         }
     }
@@ -128,7 +125,7 @@ class CameraViewModelImpl @Inject constructor(
                 withContext(Dispatchers.Main) {
                     cameraConfig = cameraConfig.copy(
                         background = background,
-                        backgroundMode = CameraConfig.BackgroundMode.Replace
+                        backgroundMode = BackgroundMode.Replace
                     )
                 }
         }
@@ -137,12 +134,12 @@ class CameraViewModelImpl @Inject constructor(
     override fun removeBackground() {
         cameraConfig = cameraConfig.copy(
             background = null,
-            backgroundMode = CameraConfig.BackgroundMode.Remove
+            backgroundMode = BackgroundMode.Remove
         )
     }
 
     override fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode) {
-        _cameraUiState.update {cameraUiState ->
+        _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 expandedTopBarMode = expandedTopBarMode
             )
@@ -165,7 +162,7 @@ class CameraViewModelImpl @Inject constructor(
     override fun startVideoRecording() {
         Log.d(TAG, "Start recording")
 
-        _cameraUiState.update {cameraUiState ->
+        _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 isVideoRecording = true
             )
@@ -175,7 +172,7 @@ class CameraViewModelImpl @Inject constructor(
     }
 
     override fun stopVideoRecording() {
-        _cameraUiState.update {cameraUiState ->
+        _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 isVideoRecording = false
             )
@@ -185,21 +182,43 @@ class CameraViewModelImpl @Inject constructor(
     }
 
     override fun setBlurPower(value: Float) {
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                blur = value
+            )
+        }
         cameraConfig = cameraConfig.copy(blurPower = value)
     }
 
     override fun setZoomPower(value: Float) {
+        val percent = (value * 100).toInt()
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                smartZoom = percent
+            )
+        }
         cameraConfig = cameraConfig.copy(
-            smartZoom = (value*100).toInt()
+            smartZoom = percent
         )
     }
 
     override fun setBeautifyPower(value: Float) {
-        cameraConfig = cameraConfig.copy(beautification = (value*100).toInt())
+        val percent = (value * 100).toInt()
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                beautification = percent
+            )
+        }
+        cameraConfig = cameraConfig.copy(beautification = percent)
     }
 
-    override fun setColorCorrectionMode(mode: CameraConfig.ColorCorrection) {
+    override fun setColorCorrectionMode(mode: ColorCorrection) {
         Log.d(TAG, "${mode.name} was chosen as color correction mode")
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                colorCorrection = mode
+            )
+        }
         cameraConfig = cameraConfig.copy(colorCorrection = mode)
     }
 }
