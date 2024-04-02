@@ -6,19 +6,23 @@ import android.util.Log
 import android.view.Surface
 import com.effectssdk.tsvb.EffectsSDK
 import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
+import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
 import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.BackgroundMode
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.subjects.BehaviorSubject
 import io.reactivex.rxjava3.subjects.PublishSubject
 
-class FrameProcessorImpl(context: Context): FrameProcessor, AutoCloseable {
+class FrameProcessorImpl(context: Context): FrameProcessor, AutoCloseable, OnFrameAvailableListener {
     companion object {
         private val factory = EffectsSDK.createSDKFactory()
     }
 
     override val frameSource = PublishSubject.create<Any>()
+    override val processedFrame = BehaviorSubject.create<Any>()
 
     private val pipeline = factory.createImagePipeline(
         context,
@@ -30,7 +34,11 @@ class FrameProcessorImpl(context: Context): FrameProcessor, AutoCloseable {
 
     init {
         pipeline.setSegmentationGap(1)
+        pipeline.setOnFrameAvailableListener(this)
     }
+
+    override fun onNewFrame(bitmap: Bitmap) =
+        processedFrame.onNext(FrameMapper.toAny(bitmap))
 
     override fun close() {
         disposable.dispose()

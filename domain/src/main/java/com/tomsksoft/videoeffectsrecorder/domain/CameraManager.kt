@@ -7,6 +7,7 @@ class CameraManager(
     private val camera: Camera,
     private val frameProcessor: FrameProcessor
 ): AutoCloseable {
+    val frameSource by frameProcessor::processedFrame
     val orientation by camera::orientation
     var direction by camera::direction
     var isEnabled by camera::isEnabled
