@@ -1,8 +1,12 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import android.Manifest
-import android.graphics.Bitmap
+import android.view.LayoutInflater
+import android.view.Surface
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -10,7 +14,6 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,7 +56,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rxjava3.subscribeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -61,10 +63,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -72,11 +72,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
-import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
+import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ICameraViewModel
@@ -126,7 +127,6 @@ fun CameraPreview() {
 @Composable
 fun CameraUi(viewModel: ICameraViewModel) {
 	val context = LocalContext.current
-	val frame by viewModel.frame.subscribeAsState(null)
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
 	val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -151,7 +151,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 	else {
 		Box {
 			// effects sdk camera feed; stays behind all other elements
-			EffectsCameraPreview(frame, snackbarHostState)
+			EffectsCameraPreview(snackbarHostState, viewModel::setSurface)
 
 			// elements of ui on top of the camera feed
 			Column(
@@ -180,7 +180,6 @@ fun CameraUi(viewModel: ICameraViewModel) {
 					) {
 						SecondaryEffectsOptions(
 							cameraUiState = cameraUiState,
-							cameraConfig = viewModel.cameraConfigData,
 							onBeautifySliderChange = viewModel::setBeautifyPower,
 							onSmartZoomSliderChange = viewModel::setZoomPower,
 							modifier = Modifier
@@ -193,7 +192,6 @@ fun CameraUi(viewModel: ICameraViewModel) {
 						}
 						PrimaryEffectsOptions(
 							cameraUiState = cameraUiState,
-							cameraConfig = viewModel.cameraConfigData,
 							snackbarHostState = snackbarHostState,
 							onPhotoPickClick = {
 								photoPickerLauncher.launch(
@@ -224,11 +222,10 @@ fun CameraUi(viewModel: ICameraViewModel) {
 @Composable
 fun PrimaryEffectsOptions(
 	cameraUiState: CameraUiState,
-	cameraConfig: CameraConfig,
 	onPhotoPickClick: () -> Unit,
 	onRemoveClick: () -> Unit,
 	onBlurSliderChange: (Float) -> Unit,
-	onColorCorrectionModeChange: (CameraConfig.ColorCorrection) -> Unit,
+	onColorCorrectionModeChange: (ColorCorrection) -> Unit,
 	snackbarHostState: SnackbarHostState
 ) {
 	val scope = rememberCoroutineScope()
@@ -256,7 +253,7 @@ fun PrimaryEffectsOptions(
 
 			PrimaryFiltersMode.BLUR -> {
 				Slider(
-					value = cameraConfig.blurPower.toFloat(),
+					value = cameraUiState.blur,
 					onValueChange = onBlurSliderChange,
 					modifier = Modifier
 						.padding(6.dp)
@@ -266,7 +263,7 @@ fun PrimaryEffectsOptions(
 					RoundedButton(
 						painter = painterResource(R.drawable.ic_filter_color_correction),
 						onClick = {
-							onColorCorrectionModeChange(CameraConfig.ColorCorrection.COLOR_CORRECTION)
+							onColorCorrectionModeChange(ColorCorrection.COLOR_CORRECTION)
 							scope.launch {
 								snackbarHostState.showSnackbar("Color correction was selected")
 							}
@@ -274,34 +271,34 @@ fun PrimaryEffectsOptions(
 						modifier = Modifier
 							.padding(12.dp),
 						backgroundColor =
-							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_CORRECTION) Color.Yellow
+							if (cameraUiState.colorCorrection == ColorCorrection.COLOR_CORRECTION) Color.Yellow
 							else MaterialTheme.colorScheme.surface,
 						tint =
-							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_CORRECTION) Color.Black
+							if (cameraUiState.colorCorrection == ColorCorrection.COLOR_CORRECTION) Color.Black
 							else MaterialTheme.colorScheme.surfaceDim,
 					)
 					RoundedButton(
 						painter = painterResource(R.drawable.ic_filter_color_grading),
 						onClick = {
-							onColorCorrectionModeChange(CameraConfig.ColorCorrection.COLOR_GRADING)
+							onColorCorrectionModeChange(ColorCorrection.COLOR_GRADING)
 							scope.launch {
 								snackbarHostState.showSnackbar("Color grading was selected")
 							}
-								  },
+						},
 						modifier = Modifier
 							.padding(12.dp),
 						backgroundColor =
-							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_GRADING) Color.Yellow
+							if (cameraUiState.colorCorrection == ColorCorrection.COLOR_GRADING) Color.Yellow
 							else MaterialTheme.colorScheme.surface,
 						tint =
-							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.COLOR_GRADING) Color.Black
+							if (cameraUiState.colorCorrection == ColorCorrection.COLOR_GRADING) Color.Black
 							else MaterialTheme.colorScheme.surfaceDim
 
 					)
 					RoundedButton(
 						painter = painterResource(R.drawable.ic_filter_preset),
 						onClick = {
-							onColorCorrectionModeChange(CameraConfig.ColorCorrection.PRESET)
+							onColorCorrectionModeChange(ColorCorrection.PRESET)
 							scope.launch {
 								snackbarHostState.showSnackbar("Preset was selected")
 							}
@@ -309,10 +306,10 @@ fun PrimaryEffectsOptions(
 						modifier = Modifier
 							.padding(12.dp),
 						backgroundColor =
-							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.PRESET) Color.Yellow
+							if (cameraUiState.colorCorrection == ColorCorrection.PRESET) Color.Yellow
 							else MaterialTheme.colorScheme.surface,
 						tint =
-							if (cameraConfig.colorCorrection == CameraConfig.ColorCorrection.PRESET) Color.Black
+							if (cameraUiState.colorCorrection == ColorCorrection.PRESET) Color.Black
 							else MaterialTheme.colorScheme.surfaceDim
 					)
 			}
@@ -324,7 +321,6 @@ fun PrimaryEffectsOptions(
 @Composable
 fun SecondaryEffectsOptions(
 	cameraUiState: CameraUiState,
-	cameraConfig: CameraConfig,
 	onBeautifySliderChange: (Float) -> Unit,
 	onSmartZoomSliderChange: (Float) -> Unit,
 	modifier: Modifier
@@ -333,7 +329,7 @@ fun SecondaryEffectsOptions(
 		modifier = modifier
 		//Modifier.align(Alignment.TopCenter)
 	) {
-		if (cameraUiState.isBeautifyEnabled) {
+		if (cameraUiState.beautification != null) {
 			Row(
 				verticalAlignment = Alignment.CenterVertically
 			) {
@@ -347,14 +343,14 @@ fun SecondaryEffectsOptions(
 				)
 				Slider(
 					onValueChange = onBeautifySliderChange,
-					value = ((cameraConfig.beautification ?: 0)/100f),
+					value = cameraUiState.beautification / 100f,
 					modifier = Modifier
 						.weight(3f)
 						.padding(3.dp)
 				)
 			}
 		}
-		if (cameraUiState.isSmartZoomEnabled) {
+		if (cameraUiState.smartZoom != null) {
 			Row(
 				verticalAlignment = Alignment.CenterVertically
 			) {
@@ -367,7 +363,7 @@ fun SecondaryEffectsOptions(
 						.padding(3.dp)
 				)
 				Slider(
-					value = (cameraConfig.smartZoom ?: 0)/100f,
+					value = cameraUiState.smartZoom / 100f,
 					onValueChange = onSmartZoomSliderChange,
 					modifier = Modifier
 						.weight(3f)
@@ -419,8 +415,8 @@ private fun RoundedButton(
 
 @Composable
 private fun EffectsCameraPreview(
-	frame: Bitmap?,
-	snackbarHostState: SnackbarHostState
+	snackbarHostState: SnackbarHostState,
+	updateSurface: (Surface?) -> Unit
 ){
 	Box(
 		contentAlignment = Alignment.Center,
@@ -428,8 +424,18 @@ private fun EffectsCameraPreview(
 			.fillMaxSize()
 			.background(MaterialTheme.colorScheme.onSurface),
 	){
-
-		if (frame == null){
+		AndroidView(factory = { context ->
+			val view = LayoutInflater.from(context)
+				.inflate(R.layout.preview, FrameLayout(context), false)
+					as SurfaceView
+			view.holder.addCallback(object: SurfaceHolder.Callback {
+				override fun surfaceCreated(holder: SurfaceHolder) = updateSurface(holder.surface)
+				override fun surfaceChanged(holder: SurfaceHolder, p1: Int, p2: Int, p3: Int) = Unit
+				override fun surfaceDestroyed(holder: SurfaceHolder) = updateSurface(null)
+			})
+			view
+		})
+		/*if (frame == null) {
 			val snackbarMessage = stringResource(id = R.string.camera_not_ready)
 			LaunchedEffect(snackbarHostState){
 				snackbarHostState.showSnackbar(snackbarMessage)
@@ -442,15 +448,7 @@ private fun EffectsCameraPreview(
 					color = MaterialTheme.colorScheme.surface,
 				)
 			}
-		}
-		else {
-			Image(
-				bitmap = frame.asImageBitmap(),
-				contentDescription = null,
-				contentScale = ContentScale.FillWidth,
-				modifier = Modifier.fillMaxSize()
-			)
-		}
+		}*/
 	}
 }
 
@@ -511,26 +509,26 @@ private fun TopBar(
 					painter = painterResource(id = R.drawable.ic_filter_beautify),
 					onClick = {
 						onFilterSettingClick(SecondaryFiltersMode.BEAUTIFY)
-						if (!cameraUiState.isBeautifyEnabled) {
+						if (cameraUiState.beautification == null) {
 							scope.launch {
 								snackbarHostState.showSnackbar("Beautify enabled")
 							}
 						}
 					},
-					tint = if (cameraUiState.isBeautifyEnabled) Color.Yellow else MaterialTheme.colorScheme.onPrimary
+					tint = if (cameraUiState.beautification != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
 				)
 
 				ImageButton(
 					painter = painterResource(id = R.drawable.ic_filter_smart_zoom),
 					onClick = {
 						onFilterSettingClick(SecondaryFiltersMode.SMART_ZOOM)
-						if (!cameraUiState.isSmartZoomEnabled) {
+						if (cameraUiState.smartZoom == null) {
 							scope.launch {
 								snackbarHostState.showSnackbar("Smart Zoom enabled")
 							}
 						}
 					},
-					tint = if (cameraUiState.isSmartZoomEnabled) Color.Yellow else MaterialTheme.colorScheme.onPrimary
+					tint = if (cameraUiState.smartZoom != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
 				)
 				// <--- two secondary filters options
 

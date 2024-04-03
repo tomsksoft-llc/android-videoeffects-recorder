@@ -13,17 +13,4 @@ data class CameraConfig(
     val smartZoom: Int? = null,
     val beautification: Int? = null,
     val colorCorrection: ColorCorrection = ColorCorrection.NO_FILTER
-) {
-    enum class ColorCorrection {
-        NO_FILTER,
-        COLOR_CORRECTION,
-        COLOR_GRADING,
-        PRESET
-    }
-    enum class BackgroundMode {
-        Regular,
-        Remove,
-        Replace,
-        Blur
-    }
-}
+)
