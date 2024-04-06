@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.Rect
@@ -74,55 +75,49 @@ class VideoRecorderImpl(
         private var disposableFrameSubscription: Disposable? = null
 
         init {
-            disposableFrameSubscription = frameSource.observeOn(Schedulers.io()).subscribe { frame ->
-                val bitmap = FrameMapper.fromAny(frame)
-                val (width, height) = bitmap.width to bitmap.height
-                // first frame setups MediaRecorder with appropriate video size and orientation
-                if (surface == null)
-                    start(width, height)
-                if (recordState != RecordState.RECORDING)
-                    return@subscribe
-                val canvas = surface!!.lockCanvas(
-                    Rect(0, 0, width, height)
-                ) ?: return@subscribe
-                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-                canvas.drawBitmap(bitmap, 0f, 0f, null)
-                surface!!.unlockCanvasAndPost(canvas)
-            }
+            disposableFrameSubscription = frameSource
+                .observeOn(Schedulers.io())
+                .subscribe(this::onNewFrame)
         }
 
         override fun close() {
             Log.d(TAG, "Interrupt video record in state: $recordState")
             when (recordState) {
-                RecordState.IDLE -> {
-                    recordState = RecordState.STOPPED
-                    disposableFrameSubscription?.dispose()
-                    mediaRecorder.release()
-                    parcelDescriptor.close()
-                }
+                RecordState.IDLE -> stop()
 
-                RecordState.STARTING -> // start() will check if STOPPING was requested
-                    recordState = RecordState.STOPPING
+                RecordState.STARTING -> recordState = RecordState.STOPPING // stop ASAP
 
-                RecordState.RECORDING -> {
-                    recordState = RecordState.STOPPED
-                    disposableFrameSubscription?.dispose()
-                    mediaRecorder.stop()
-                    mediaRecorder.release()
-                    parcelDescriptor.close()
-                }
+                RecordState.RECORDING -> stop()
 
-                RecordState.STOPPING -> { // MediaRecorder wasn't started, so there's no frames recorded
-                    recordState = RecordState.STOPPED
-                    disposableFrameSubscription?.dispose()
-                    mediaRecorder.release()
-                    parcelDescriptor.close()
-                    deleteFile(file) // video without frames would represent broken file
-                }
+                RecordState.STOPPING -> throw IllegalStateException("Already stopping")
 
-                RecordState.STOPPED ->
-                    throw IllegalStateException("Already stopped")
+                RecordState.STOPPED -> throw IllegalStateException("Already stopped")
             }
+        }
+
+        private fun onNewFrame(frame: Any) {
+            val bitmap = FrameMapper.fromAny(frame)
+            // first frame setups MediaRecorder with appropriate video size and orientation
+            when (recordState) {
+                RecordState.IDLE -> {
+                    start(bitmap.width, bitmap.height) // sets state in STOPPED or RECORDING
+                    if (recordState == RecordState.RECORDING) onNewFrame(frame) // don't lose first frame
+                }
+
+                RecordState.STARTING, RecordState.STOPPING, RecordState.STOPPED ->
+                    Log.w(TAG, "Cancel drawing in state: $recordState") // unreachable
+
+                RecordState.RECORDING -> draw(bitmap)
+            }
+        }
+
+        private fun draw(bitmap: Bitmap) {
+            val canvas = surface!!.lockCanvas(
+                Rect(0, 0, bitmap.width, bitmap.height)
+            ) ?: return
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+            canvas.drawBitmap(bitmap, 0f, 0f, null)
+            surface!!.unlockCanvasAndPost(canvas)
         }
 
         private fun start(width: Int, height: Int) {
@@ -150,20 +145,43 @@ class VideoRecorderImpl(
             }
             surface = mediaRecorder.surface
 
-            if (recordState == RecordState.STOPPING) // cancel if stop is already requested
-                close()
-            else {
-                recordState = RecordState.RECORDING
-                mediaRecorder.start()
+            if (recordState == RecordState.STOPPING) {
+                Log.d(TAG, "Stop was requested while setting MediaRecorder")
+                stop()
+                return
             }
+
+            mediaRecorder.start() // long operation
+
+            if (recordState == RecordState.STOPPING) {
+                Log.d(TAG, "Stop was requested while starting MediaRecorder")
+                stop()
+                return
+            }
+
+            recordState = RecordState.RECORDING
+        }
+
+        private fun stop() {
+            recordState = RecordState.STOPPED
+            disposableFrameSubscription?.dispose()
+
+            try {
+                mediaRecorder.stop()
+            } catch (e: RuntimeException) { // no valid audio/video data has been received
+                deleteFile(file)
+            }
+
+            mediaRecorder.release()
+            parcelDescriptor.close()
         }
     }
 
     private enum class RecordState {
         IDLE, // waiting for first frame to setup MediaRecorder
         STARTING, // setting up MediaRecorder
-        RECORDING, // MediaRecorder catches frames
-        STOPPING, // waiting for finish setting up MediaRecorder to release after
+        RECORDING, // started
+        STOPPING, // request stop while starting MediaRecorder
         STOPPED
     }
 }
