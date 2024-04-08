@@ -92,11 +92,19 @@ class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, O
                 setBeautificationPower(cameraConfig.beautification!!)
             } else enableBeautification(false)
             /* Color Correction */
-            setColorCorrectionMode(when (cameraConfig.colorCorrection) {
-                ColorCorrection.NO_FILTER -> ColorCorrectionMode.NO_FILTER_MODE
-                ColorCorrection.COLOR_CORRECTION -> ColorCorrectionMode.COLOR_CORRECTION_MODE
-                ColorCorrection.COLOR_GRADING -> ColorCorrectionMode.COLOR_GRADING_MODE
-                ColorCorrection.PRESET -> ColorCorrectionMode.PRESET_MODE
-            })
+            when (cameraConfig.colorCorrection) {
+                ColorCorrection.NO_FILTER -> {setColorCorrectionMode(ColorCorrectionMode.NO_FILTER_MODE)}
+                ColorCorrection.COLOR_CORRECTION -> {
+                    setColorCorrectionMode(ColorCorrectionMode.COLOR_CORRECTION_MODE)
+                    setColorFilterStrength(cameraConfig.colorCorrectionPower)
+                }
+                ColorCorrection.COLOR_GRADING -> {
+                    setColorCorrectionMode(ColorCorrectionMode.COLOR_GRADING_MODE)
+                    //setColorGradingReferenceImage(cameraConfig.colorGradingReference as Bitmap) TODO: убрать
+                }
+                ColorCorrection.PRESET -> {
+                    setColorCorrectionMode(ColorCorrectionMode.PRESET_MODE)
+                }
+            }
         }
 }

@@ -205,6 +205,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 							},
 							onRemoveClick = viewModel::removeBackground,
 							onBlurSliderChange = viewModel::setBlurPower,
+							onColorCorrectionSliderChange = viewModel::setColorCorrectionPower,
 							onColorCorrectionModeChange = viewModel::setColorCorrectionMode
 						)
 					}
@@ -228,6 +229,7 @@ fun PrimaryEffectsOptions(
 	onPhotoPickClick: () -> Unit,
 	onRemoveClick: () -> Unit,
 	onBlurSliderChange: (Float) -> Unit,
+	onColorCorrectionSliderChange: (Float) -> Unit,
 	onColorCorrectionModeChange: (ColorCorrection) -> Unit,
 	snackbarHostState: SnackbarHostState
 ) {
@@ -263,58 +265,98 @@ fun PrimaryEffectsOptions(
 				)
 			}
 			PrimaryFiltersMode.COLOR_CORRECTION -> {
-					RoundedButton(
-						painter = painterResource(R.drawable.ic_filter_color_correction),
-						onClick = {
-							onColorCorrectionModeChange(ColorCorrection.COLOR_CORRECTION)
-							scope.launch {
-								snackbarHostState.showSnackbar("Color correction was selected")
-							}
-						},
-						modifier = Modifier
-							.padding(12.dp),
-						backgroundColor =
-							if (cameraUiState.colorCorrection == ColorCorrection.COLOR_CORRECTION) Color.Yellow
-							else MaterialTheme.colorScheme.surface,
-						tint =
-							if (cameraUiState.colorCorrection == ColorCorrection.COLOR_CORRECTION) Color.Black
-							else MaterialTheme.colorScheme.surfaceDim,
-					)
-					RoundedButton(
-						painter = painterResource(R.drawable.ic_filter_color_grading),
-						onClick = {
-							onColorCorrectionModeChange(ColorCorrection.COLOR_GRADING)
-							scope.launch {
-								snackbarHostState.showSnackbar("Color grading was selected")
-							}
-						},
-						modifier = Modifier
-							.padding(12.dp),
-						backgroundColor =
-							if (cameraUiState.colorCorrection == ColorCorrection.COLOR_GRADING) Color.Yellow
-							else MaterialTheme.colorScheme.surface,
-						tint =
-							if (cameraUiState.colorCorrection == ColorCorrection.COLOR_GRADING) Color.Black
-							else MaterialTheme.colorScheme.surfaceDim
+				when(cameraUiState.colorCorrectionMode) {
+					// show 3 default buttons for 3 available color correction modes (no one chosen so far)
+					ColorCorrection.NO_FILTER -> {
+						RoundedButton(
+							painter = painterResource(R.drawable.ic_filter_color_correction),
+							onClick = {
+								onColorCorrectionModeChange(ColorCorrection.COLOR_CORRECTION)
+								scope.launch {
+									snackbarHostState.showSnackbar("Color correction was selected")
+								}
+							},
+							modifier = Modifier
+								.padding(12.dp),
+							backgroundColor = MaterialTheme.colorScheme.surface,
+							tint = MaterialTheme.colorScheme.surfaceDim
+						)
+						RoundedButton(
+							painter = painterResource(R.drawable.ic_filter_color_grading),
+							onClick = {
+								onColorCorrectionModeChange(ColorCorrection.COLOR_GRADING)
+								scope.launch {
+									snackbarHostState.showSnackbar("Color grading was selected")
+								}
+							},
+							modifier = Modifier
+								.padding(12.dp),
+							backgroundColor = MaterialTheme.colorScheme.surface,
+							tint = MaterialTheme.colorScheme.surfaceDim
+						)
+						RoundedButton(
+							painter = painterResource(R.drawable.ic_filter_preset),
+							onClick = {
+								onColorCorrectionModeChange(ColorCorrection.PRESET)
+								scope.launch {
+									snackbarHostState.showSnackbar("Preset was selected")
+								}
+							},
+							modifier = Modifier
+								.padding(12.dp),
+							backgroundColor = MaterialTheme.colorScheme.surface,
+							tint = MaterialTheme.colorScheme.surfaceDim
+						)
+					}
+					// show slider for color correction
+					ColorCorrection.COLOR_CORRECTION -> {
+						RoundedButton(
+							painter = painterResource(R.drawable.ic_filter_color_correction),
+							onClick = {
+								onColorCorrectionModeChange(ColorCorrection.NO_FILTER)
+							},
+							modifier = Modifier
+								.padding(12.dp),
+							backgroundColor = Color.Yellow,
+							tint = Color.Black
+						)
+						Slider(
+							onValueChange = onColorCorrectionSliderChange,
+							value = cameraUiState.colorCorrectionPower,
+							modifier = Modifier
+								.weight(3f)
+								.padding(12.dp)
+						)
 
-					)
-					RoundedButton(
-						painter = painterResource(R.drawable.ic_filter_preset),
-						onClick = {
-							onColorCorrectionModeChange(ColorCorrection.PRESET)
-							scope.launch {
-								snackbarHostState.showSnackbar("Preset was selected")
-							}
-						},
-						modifier = Modifier
-							.padding(12.dp),
-						backgroundColor =
-							if (cameraUiState.colorCorrection == ColorCorrection.PRESET) Color.Yellow
-							else MaterialTheme.colorScheme.surface,
-						tint =
-							if (cameraUiState.colorCorrection == ColorCorrection.PRESET) Color.Black
-							else MaterialTheme.colorScheme.surfaceDim
-					)
+					}
+					// show button for choosing an image reference
+					ColorCorrection.COLOR_GRADING -> {
+						RoundedButton(
+							painter = painterResource(R.drawable.ic_filter_color_grading),
+							onClick = {
+								onColorCorrectionModeChange(ColorCorrection.NO_FILTER)
+							},
+							modifier = Modifier
+								.padding(12.dp),
+							backgroundColor = Color.Yellow,
+							tint = Color.Black
+						)
+						// TODO: add button for image reference choosing 
+					}
+					// should there be some setting to configure for this color correction mode??
+					ColorCorrection.PRESET -> {
+						RoundedButton(
+							painter = painterResource(R.drawable.ic_filter_preset),
+							onClick = {
+								onColorCorrectionModeChange(ColorCorrection.NO_FILTER)
+							},
+							modifier = Modifier
+								.padding(12.dp),
+							backgroundColor = Color.Yellow,
+							tint = Color.Black
+						)
+					}
+				}
 			}
 			PrimaryFiltersMode.NONE -> {}
 		}
