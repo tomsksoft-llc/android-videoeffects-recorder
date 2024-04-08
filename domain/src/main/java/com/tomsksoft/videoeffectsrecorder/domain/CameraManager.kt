@@ -9,15 +9,15 @@ class CameraManager(
 ): AutoCloseable {
     val frameSource by frameProcessor::processedFrame
     val orientation by camera::orientation
-    var direction by camera::direction
+    var direction by frameProcessor::direction
     var isEnabled by camera::isEnabled
     val cameraConfig = BehaviorSubject.createDefault(CameraConfig())
 
     private val disposable = cameraConfig.subscribe(frameProcessor::configure)
 
-    init {
+    /*init {
         camera.frameSource.subscribe(frameProcessor.frameSource)
-    }
+    }*/
 
     fun setSurface(surface: Surface?) = frameProcessor.setSurface(surface)
     override fun close() = disposable.dispose()

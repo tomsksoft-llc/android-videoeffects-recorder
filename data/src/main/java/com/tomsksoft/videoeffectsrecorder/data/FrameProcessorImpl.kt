@@ -4,7 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.Surface
+import com.effectssdk.tsvb.Camera
 import com.effectssdk.tsvb.EffectsSDK
+import com.effectssdk.tsvb.pipeline.CameraPipeline
 import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
 import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
 import com.effectssdk.tsvb.pipeline.PipelineMode
@@ -16,32 +18,52 @@ import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import io.reactivex.rxjava3.subjects.PublishSubject
 
-class FrameProcessorImpl(context: Context): FrameProcessor, AutoCloseable, OnFrameAvailableListener {
+class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, OnFrameAvailableListener {
     companion object {
         private val factory = EffectsSDK.createSDKFactory()
     }
 
     override val frameSource = PublishSubject.create<Any>()
     override val processedFrame = BehaviorSubject.create<Any>()
+    override var direction: FrameProcessor.Direction = FrameProcessor.Direction.BACK
+        set(value) {
+            field = value
+            pipeline = start(
+                context,
+                when (field) {
+                    FrameProcessor.Direction.BACK -> Camera.BACK
+                    FrameProcessor.Direction.FRONT -> Camera.FRONT
+                }
+            )
+        }
+    private var pipeline: CameraPipeline
 
-    private val pipeline = factory.createImagePipeline(
-        context,
-        fpsListener = { Log.d("FPS", it.toString()) }
-    )
-    private val disposable = frameSource
+/*    private val disposable = frameSource
         .map(FrameMapper::fromAny)
-        .subscribe(pipeline::process)
+        .subscribe(pipeline::process)*/
 
     init {
+        pipeline = start(context, Camera.BACK)
+    }
+
+    private fun start(context: Context, cameraDirection: Camera): CameraPipeline {
+        val pipeline = factory.createCameraPipeline(
+            context,
+            fpsListener = { Log.d("FPS", it.toString()) },
+            camera = cameraDirection
+        )
+
         pipeline.setSegmentationGap(1)
         pipeline.setOnFrameAvailableListener(this)
+        pipeline.startPipeline()
+        return pipeline
     }
 
     override fun onNewFrame(bitmap: Bitmap) =
         processedFrame.onNext(FrameMapper.toAny(bitmap))
 
     override fun close() {
-        disposable.dispose()
+        //disposable.dispose()
         pipeline.release()
     }
 

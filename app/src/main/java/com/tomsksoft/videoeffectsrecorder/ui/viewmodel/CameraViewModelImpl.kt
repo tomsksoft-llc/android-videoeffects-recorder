@@ -12,6 +12,7 @@ import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +49,8 @@ class CameraViewModelImpl @Inject constructor(
         smartZoom = cameraConfig.smartZoom,
         beautification = cameraConfig.beautification,
         isVideoRecording = cameraRecordManager.isRecording,
-        isCameraInitialized = true // TODO [tva] check if EffectsSDK is initialized
+        isCameraInitialized = true, // TODO [tva] check if EffectsSDK is initialized
+        pipelineCameraDirection = FrameProcessor.Direction.BACK
     ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
@@ -147,11 +149,21 @@ class CameraViewModelImpl @Inject constructor(
     }
 
     override fun flipCamera() {
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                pipelineCameraDirection =
+                if (cameraUiState.pipelineCameraDirection == FrameProcessor.Direction.BACK)
+                    FrameProcessor.Direction.FRONT
+                else
+                    FrameProcessor.Direction.BACK
+            )
+
+        }
         cameraManager.direction =
-            if (cameraManager.direction == Camera.Direction.BACK)
-                Camera.Direction.FRONT
+            if (cameraManager.direction == FrameProcessor.Direction.BACK)
+                FrameProcessor.Direction.FRONT
             else
-                Camera.Direction.BACK
+                FrameProcessor.Direction.BACK
     }
 
     override fun captureImage() {

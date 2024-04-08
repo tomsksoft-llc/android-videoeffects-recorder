@@ -1,6 +1,7 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import android.Manifest
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -55,6 +56,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,6 +80,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ICameraViewModel
@@ -151,7 +154,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 	else {
 		Box {
 			// effects sdk camera feed; stays behind all other elements
-			EffectsCameraPreview(snackbarHostState, viewModel::setSurface)
+			EffectsCameraPreview(snackbarHostState, cameraUiState.pipelineCameraDirection, viewModel::setSurface)
 
 			// elements of ui on top of the camera feed
 			Column(
@@ -416,6 +419,7 @@ private fun RoundedButton(
 @Composable
 private fun EffectsCameraPreview(
 	snackbarHostState: SnackbarHostState,
+	pipelineCameraDirection: FrameProcessor.Direction,
 	updateSurface: (Surface?) -> Unit
 ){
 	Box(
@@ -424,31 +428,32 @@ private fun EffectsCameraPreview(
 			.fillMaxSize()
 			.background(MaterialTheme.colorScheme.onSurface),
 	){
-		AndroidView(factory = { context ->
-			val view = LayoutInflater.from(context)
-				.inflate(R.layout.preview, FrameLayout(context), false)
-					as SurfaceView
-			view.holder.addCallback(object: SurfaceHolder.Callback {
-				override fun surfaceCreated(holder: SurfaceHolder) = updateSurface(holder.surface)
-				override fun surfaceChanged(holder: SurfaceHolder, p1: Int, p2: Int, p3: Int) = Unit
-				override fun surfaceDestroyed(holder: SurfaceHolder) = updateSurface(null)
-			})
-			view
-		})
-		/*if (frame == null) {
-			val snackbarMessage = stringResource(id = R.string.camera_not_ready)
-			LaunchedEffect(snackbarHostState){
-				snackbarHostState.showSnackbar(snackbarMessage)
-			}
-			Column(
-				horizontalAlignment = Alignment.CenterHorizontally,
-			) {
-				CircularProgressIndicator(
-					modifier = Modifier.width(64.dp),
-					color = MaterialTheme.colorScheme.surface,
-				)
-			}
-		}*/
+		key (pipelineCameraDirection) {
+			AndroidView(
+				factory = { context ->
+					val view = LayoutInflater.from(context)
+						.inflate(R.layout.preview, FrameLayout(context), false)
+							as SurfaceView
+
+					view.holder.addCallback(object : SurfaceHolder.Callback {
+						override fun surfaceCreated(holder: SurfaceHolder) {
+							Log.d("AndroidView", "surfaceCreated")
+							updateSurface(holder.surface)
+						}
+
+						override fun surfaceChanged(
+							holder: SurfaceHolder,
+							p1: Int,
+							p2: Int,
+							p3: Int
+						) = Unit
+
+						override fun surfaceDestroyed(holder: SurfaceHolder) = updateSurface(null)
+					})
+					view
+				}
+			)
+		}
 	}
 }
 
