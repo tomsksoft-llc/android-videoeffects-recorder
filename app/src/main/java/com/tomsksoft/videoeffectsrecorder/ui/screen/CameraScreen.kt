@@ -154,7 +154,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 	else {
 		Box {
 			// effects sdk camera feed; stays behind all other elements
-			EffectsCameraPreview(snackbarHostState, cameraUiState.pipelineCameraDirection, viewModel::setSurface)
+			EffectsCameraPreview(snackbarHostState, viewModel::setSurface)
 
 			// elements of ui on top of the camera feed
 			Column(
@@ -461,7 +461,6 @@ private fun RoundedButton(
 @Composable
 private fun EffectsCameraPreview(
 	snackbarHostState: SnackbarHostState,
-	pipelineCameraDirection: FrameProcessor.Direction,
 	updateSurface: (Surface?) -> Unit
 ){
 	Box(
@@ -470,32 +469,30 @@ private fun EffectsCameraPreview(
 			.fillMaxSize()
 			.background(MaterialTheme.colorScheme.onSurface),
 	){
-		key (pipelineCameraDirection) {
-			AndroidView(
-				factory = { context ->
-					val view = LayoutInflater.from(context)
-						.inflate(R.layout.preview, FrameLayout(context), false)
-							as SurfaceView
+		AndroidView(
+			factory = { context ->
+				val view = LayoutInflater.from(context)
+					.inflate(R.layout.preview, FrameLayout(context), false)
+						as SurfaceView
 
-					view.holder.addCallback(object : SurfaceHolder.Callback {
-						override fun surfaceCreated(holder: SurfaceHolder) {
-							Log.d("AndroidView", "surfaceCreated")
-							updateSurface(holder.surface)
-						}
+				view.holder.addCallback(object : SurfaceHolder.Callback {
+					override fun surfaceCreated(holder: SurfaceHolder) {
+						Log.d("AndroidView", "surfaceCreated")
+						updateSurface(holder.surface)
+					}
 
-						override fun surfaceChanged(
-							holder: SurfaceHolder,
-							p1: Int,
-							p2: Int,
-							p3: Int
-						) = Unit
+					override fun surfaceChanged(
+						holder: SurfaceHolder,
+						p1: Int,
+						p2: Int,
+						p3: Int
+					) = Unit
 
-						override fun surfaceDestroyed(holder: SurfaceHolder) = updateSurface(null)
-					})
-					view
-				}
-			)
-		}
+					override fun surfaceDestroyed(holder: SurfaceHolder) = updateSurface(null)
+				})
+				view
+			}
+		)
 	}
 }
 

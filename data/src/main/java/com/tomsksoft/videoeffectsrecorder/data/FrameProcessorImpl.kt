@@ -28,6 +28,7 @@ class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, O
     override var direction: FrameProcessor.Direction = FrameProcessor.Direction.BACK
         set(value) {
             field = value
+            pipeline.release()
             pipeline = start(
                 context,
                 when (field) {
@@ -37,7 +38,7 @@ class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, O
             )
         }
     private var pipeline: CameraPipeline
-
+    private var surface: Surface? = null
 /*    private val disposable = frameSource
         .map(FrameMapper::fromAny)
         .subscribe(pipeline::process)*/
@@ -55,6 +56,7 @@ class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, O
 
         pipeline.setSegmentationGap(1)
         pipeline.setOnFrameAvailableListener(this)
+        pipeline.setOutputSurface(surface)
         pipeline.startPipeline()
         return pipeline
     }
@@ -67,7 +69,10 @@ class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, O
         pipeline.release()
     }
 
-    override fun setSurface(surface: Surface?) = pipeline.setOutputSurface(surface)
+    override fun setSurface(surface: Surface?) {
+        this.surface = surface
+        pipeline.setOutputSurface(this.surface)
+    }
 
     override fun configure(cameraConfig: CameraConfig): Unit =
         pipeline.run {
