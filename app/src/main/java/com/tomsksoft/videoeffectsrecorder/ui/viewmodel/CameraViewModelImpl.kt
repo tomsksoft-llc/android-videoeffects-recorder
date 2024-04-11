@@ -149,16 +149,6 @@ class CameraViewModelImpl @Inject constructor(
     }
 
     override fun flipCamera() {
-        _cameraUiState.update { cameraUiState ->
-            cameraUiState.copy(
-                pipelineCameraDirection =
-                if (cameraUiState.pipelineCameraDirection == FrameProcessor.Direction.BACK)
-                    FrameProcessor.Direction.FRONT
-                else
-                    FrameProcessor.Direction.BACK
-            )
-
-        }
         cameraManager.direction =
             if (cameraManager.direction == FrameProcessor.Direction.BACK)
                 FrameProcessor.Direction.FRONT
