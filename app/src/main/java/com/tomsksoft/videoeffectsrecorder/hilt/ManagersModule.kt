@@ -4,6 +4,7 @@ import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
+import com.tomsksoft.videoeffectsrecorder.domain.PhotoPicker
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
 import dagger.Module
 import dagger.Provides
@@ -21,6 +22,9 @@ object ManagersModule {
 
     @Provides
     @Singleton
-    fun provideRecordManager(cameraManager: CameraManager, videoRecorder: VideoRecorder) =
-        CameraRecordManager(cameraManager, videoRecorder)
+    fun provideRecordManager(
+        cameraManager: CameraManager,
+        videoRecorder: VideoRecorder,
+        photoPicker: PhotoPicker
+    ) = CameraRecordManager(cameraManager, videoRecorder, photoPicker)
 }

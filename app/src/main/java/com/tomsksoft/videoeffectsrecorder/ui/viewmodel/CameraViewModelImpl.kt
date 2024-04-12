@@ -156,7 +156,7 @@ class CameraViewModelImpl @Inject constructor(
 
     override fun captureImage() {
         Log.d(TAG, "Capture image")
-        // TODO: [fmv] add usecase interaction
+        cameraRecordManager.takePhoto()
     }
 
     override fun startVideoRecording() {
