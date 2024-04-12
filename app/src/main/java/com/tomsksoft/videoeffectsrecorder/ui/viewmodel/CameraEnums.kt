@@ -27,7 +27,8 @@ enum class PrimaryFiltersMode(@StringRes val resourceId: Int) {
  */
 enum class SecondaryFiltersMode(@StringRes val resourceId: Int) {
     BEAUTIFY(R.string.effects_beautify),
-    SMART_ZOOM(R.string.effects_smart_zoom)
+    SMART_ZOOM(R.string.effects_smart_zoom),
+    SHARPNESS(R.string.effects_sharpness)
 }
 
 /**

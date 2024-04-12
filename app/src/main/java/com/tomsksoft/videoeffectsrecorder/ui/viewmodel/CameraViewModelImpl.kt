@@ -108,6 +108,12 @@ class CameraViewModelImpl @Inject constructor(
                         smartZoom = if (cameraUiState.smartZoom == null) 25 else null
                     )
                 }
+
+                SecondaryFiltersMode.SHARPNESS -> {
+                    cameraUiState.copy(
+                        sharpnessPower = if (cameraUiState.sharpnessPower == null) 0.25f else null
+                    )
+                }
             }
         }
         cameraConfig = when(filtersMode) {
@@ -116,6 +122,9 @@ class CameraViewModelImpl @Inject constructor(
             )
             SecondaryFiltersMode.SMART_ZOOM -> cameraConfig.copy(
                 smartZoom = cameraConfig.smartZoom
+            )
+            SecondaryFiltersMode.SHARPNESS -> cameraConfig.copy(
+                sharpnessPower = cameraConfig.sharpnessPower
             )
         }
     }
@@ -233,5 +242,14 @@ class CameraViewModelImpl @Inject constructor(
             )
         }
         cameraConfig = cameraConfig.copy(colorCorrectionPower = value)
+    }
+
+    override fun setSharpnessPower(value: Float) {
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                sharpnessPower = value
+            )
+        }
+        cameraConfig = cameraConfig.copy(sharpnessPower = value)
     }
 }

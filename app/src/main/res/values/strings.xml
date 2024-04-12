@@ -5,6 +5,7 @@
 	<string name="effects_replace_background">Replace Background</string>
 	<string name="effects_beautify">Beautification</string>
 	<string name="effects_smart_zoom">Smart Zoom</string>
+	<string name="effects_sharpness">Sharpness</string>
 	<string name="effects_color_correction">Color Correction</string>
 	<string name="effects_none">None</string>
 </resources>

@@ -17,5 +17,6 @@ data class CameraUiState(
     val isVideoRecording: Boolean = false,
     val isCameraInitialized: Boolean = true,
     val pipelineCameraDirection: FrameProcessor.Direction = FrameProcessor.Direction.BACK,
-    val colorCorrectionPower: Float = 0.125f
+    val colorCorrectionPower: Float = 0.125f,
+    val sharpnessPower: Float? = null
 )

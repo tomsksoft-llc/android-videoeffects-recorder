@@ -185,6 +185,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 							cameraUiState = cameraUiState,
 							onBeautifySliderChange = viewModel::setBeautifyPower,
 							onSmartZoomSliderChange = viewModel::setZoomPower,
+							onSharpnessSliderChange = viewModel::setSharpnessPower,
 							modifier = Modifier
 						)
 						Box(Modifier.weight(1f)) {
@@ -368,6 +369,7 @@ fun SecondaryEffectsOptions(
 	cameraUiState: CameraUiState,
 	onBeautifySliderChange: (Float) -> Unit,
 	onSmartZoomSliderChange: (Float) -> Unit,
+	onSharpnessSliderChange: (Float) -> Unit,
 	modifier: Modifier
 ) {
 	Column(
@@ -410,6 +412,27 @@ fun SecondaryEffectsOptions(
 				Slider(
 					value = cameraUiState.smartZoom / 100f,
 					onValueChange = onSmartZoomSliderChange,
+					modifier = Modifier
+						.weight(3f)
+						.padding(3.dp)
+				)
+			}
+		}
+		if (cameraUiState.sharpnessPower != null){
+			Row(
+				verticalAlignment = Alignment.CenterVertically
+			) {
+				Icon(
+					painter = painterResource(id = R.drawable.ic_filter),
+					contentDescription = null,
+					tint = Color.White,
+					modifier = Modifier
+						.weight(1f)
+						.padding(3.dp)
+				)
+				Slider(
+					value = cameraUiState.sharpnessPower,
+					onValueChange = onSharpnessSliderChange,
 					modifier = Modifier
 						.weight(3f)
 						.padding(3.dp)
@@ -548,7 +571,7 @@ private fun TopBar(
 					onClick = { onToggleTopBar(ExpandedTopBarMode.FLASH) }
 				)
 
-				// ---> two secondary filters options
+				// ---> three secondary filters options
 				ImageButton(
 					painter = painterResource(id = R.drawable.ic_filter_beautify),
 					onClick = {
@@ -574,7 +597,20 @@ private fun TopBar(
 					},
 					tint = if (cameraUiState.smartZoom != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
 				)
-				// <--- two secondary filters options
+
+				ImageButton(
+					painter = painterResource(id = R.drawable.ic_filter),
+					onClick = {
+						onFilterSettingClick(SecondaryFiltersMode.SHARPNESS)
+						if (cameraUiState.sharpnessPower == null) {
+							scope.launch {
+								snackbarHostState.showSnackbar("Sharpness enabled")
+							}
+						}
+					},
+					tint = if (cameraUiState.sharpnessPower != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
+				)
+				// <--- three secondary filters options
 
 				ImageButton( // secondary options
 					painter = painterResource(R.drawable.ic_more),
