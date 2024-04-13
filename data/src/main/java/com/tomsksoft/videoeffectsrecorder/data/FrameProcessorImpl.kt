@@ -76,5 +76,10 @@ class FrameProcessorImpl(context: Context): FrameProcessor, AutoCloseable, OnFra
                 ColorCorrection.COLOR_GRADING -> ColorCorrectionMode.COLOR_GRADING_MODE
                 ColorCorrection.PRESET -> ColorCorrectionMode.PRESET_MODE
             })
+            if (
+                cameraConfig.colorCorrection == ColorCorrection.COLOR_GRADING &&
+                cameraConfig.colorGradingSource != null
+            ) setColorGradingReferenceImage(cameraConfig.colorGradingSource as Bitmap)
+            setColorFilterStrength(1f) // TODO [tva] set it
         }
 }
