@@ -4,50 +4,50 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.Surface
-import com.effectssdk.tsvb.Camera
 import com.effectssdk.tsvb.EffectsSDK
 import com.effectssdk.tsvb.pipeline.CameraPipeline
 import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
+import com.effectssdk.tsvb.pipeline.DeviceOrientation
 import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
+import com.effectssdk.tsvb.pipeline.OrientationChangeListener
 import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.BackgroundMode
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
-import io.reactivex.rxjava3.core.Observable
+import com.tomsksoft.videoeffectsrecorder.domain.EffectsPipelineCamera
+import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import io.reactivex.rxjava3.subjects.BehaviorSubject
-import io.reactivex.rxjava3.subjects.PublishSubject
+import kotlin.math.abs
 
-class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, OnFrameAvailableListener {
+class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, AutoCloseable, OnFrameAvailableListener {
     companion object {
         private val factory = EffectsSDK.createSDKFactory()
     }
 
-    override val frameSource = PublishSubject.create<Any>()
     override val processedFrame = BehaviorSubject.create<Any>()
-    override var direction: FrameProcessor.Direction = FrameProcessor.Direction.BACK
+    override var orientation: Int = 0
+    override var direction: Camera.Direction = Camera.Direction.BACK
         set(value) {
             field = value
             pipeline.release()
+            isEnabled = false
             pipeline = start(
                 context,
                 when (field) {
-                    FrameProcessor.Direction.BACK -> Camera.BACK
-                    FrameProcessor.Direction.FRONT -> Camera.FRONT
+                    Camera.Direction.BACK -> com.effectssdk.tsvb.Camera.BACK
+                    Camera.Direction.FRONT -> com.effectssdk.tsvb.Camera.FRONT
                 }
             )
         }
+    override var isEnabled: Boolean = false
     private var pipeline: CameraPipeline
     private var surface: Surface? = null
-/*    private val disposable = frameSource
-        .map(FrameMapper::fromAny)
-        .subscribe(pipeline::process)*/
 
     init {
-        pipeline = start(context, Camera.BACK)
+        pipeline = start(context, com.effectssdk.tsvb.Camera.BACK)
     }
 
-    private fun start(context: Context, cameraDirection: Camera): CameraPipeline {
+    private fun start(context: Context, cameraDirection: com.effectssdk.tsvb.Camera): CameraPipeline {
         val pipeline = factory.createCameraPipeline(
             context,
             fpsListener = { Log.d("FPS", it.toString()) },
@@ -55,9 +55,11 @@ class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, O
         )
 
         pipeline.setSegmentationGap(1)
-        pipeline.setOnFrameAvailableListener(this)
+        //pipeline.setOnFrameAvailableListener(this)
+        pipeline.setOrientationChangeListener(OrientationChangeListenerImpl())
         pipeline.setOutputSurface(surface)
         pipeline.startPipeline()
+        isEnabled = true
         return pipeline
     }
 
@@ -65,7 +67,7 @@ class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, O
         processedFrame.onNext(FrameMapper.toAny(bitmap))
 
     override fun close() {
-        //disposable.dispose()
+        isEnabled = false
         pipeline.release()
     }
 
@@ -104,4 +106,16 @@ class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, O
                 ColorCorrection.PRESET -> ColorCorrectionMode.PRESET_MODE
             })
         }
+    inner class OrientationChangeListenerImpl: OrientationChangeListener {
+        override fun onOrientationChanged(deviceOrientation: DeviceOrientation, rotation: Int) {
+            val degree = when {
+                abs(rotation - 90) <= 45 -> 90
+                abs(rotation - 180) <= 45 -> 180
+                abs(rotation - 270) <= 45 -> 270
+                else -> 0
+            }
+            if (degree != rotation)
+                orientation = degree
+        }
+    }
 }

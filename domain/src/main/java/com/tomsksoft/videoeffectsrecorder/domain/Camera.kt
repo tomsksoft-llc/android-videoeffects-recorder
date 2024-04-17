@@ -1,10 +1,10 @@
 package com.tomsksoft.videoeffectsrecorder.domain
 
-import io.reactivex.rxjava3.core.Observable
-
 interface Camera {
-    val frameSource: Observable<Any>
     val orientation: Int
+    /**
+     * Shows if frame source (be it CameraX directly or CameraPipeline instance) is set up
+     */
     var isEnabled: Boolean
     var direction: Direction
 

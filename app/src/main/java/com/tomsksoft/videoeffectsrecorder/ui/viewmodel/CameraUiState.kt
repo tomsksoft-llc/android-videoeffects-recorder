@@ -1,7 +1,7 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
+import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
 
 /**
  * Defines the current state of the CameraScreen
@@ -16,5 +16,5 @@ data class CameraUiState(
     val colorCorrection: ColorCorrection = ColorCorrection.NO_FILTER,
     val isVideoRecording: Boolean = false,
     val isCameraInitialized: Boolean = true,
-    val pipelineCameraDirection: FrameProcessor.Direction = FrameProcessor.Direction.BACK
+    val pipelineCameraDirection: Camera.Direction = Camera.Direction.BACK
 )
