@@ -2,6 +2,7 @@ package com.tomsksoft.videoeffectsrecorder.data
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.util.Log
 import android.view.Surface
 import com.effectssdk.tsvb.EffectsSDK
@@ -80,6 +81,6 @@ class FrameProcessorImpl(context: Context): FrameProcessor, AutoCloseable, OnFra
                 cameraConfig.colorCorrection == ColorCorrection.COLOR_GRADING &&
                 cameraConfig.colorGradingSource != null
             ) setColorGradingReferenceImage(cameraConfig.colorGradingSource as Bitmap)
-            setColorFilterStrength(1f) // TODO [tva] set it
+            setColorFilterStrength(1f) // TODO [tva] pass through config
         }
 }

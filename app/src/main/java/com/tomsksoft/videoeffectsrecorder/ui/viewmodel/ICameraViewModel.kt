@@ -27,7 +27,8 @@ interface ICameraViewModel {
 
     /**
      * @param colorGradingSource binary representation of bitmap, required only
-     * for {@link com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection#COLOR_GRADING} mode
+     * for {@link com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection#COLOR_GRADING} mode,
+     * MUST be null if different mode is chosen
      */
     fun setColorCorrectionMode(mode: ColorCorrection, colorGradingSource: InputStream? = null)
 }
