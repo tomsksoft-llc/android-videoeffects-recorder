@@ -35,10 +35,10 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
     override var orientation: Int = 0
     override var flashMode: FlashMode = FlashMode.OFF
         set(value) {
-            when (flashMode) {
+            when (value) {
                 FlashMode.ON -> cam.cameraControl.enableTorch(true)
                 FlashMode.OFF -> cam.cameraControl.enableTorch(false)
-                FlashMode.AUTO -> {}
+                FlashMode.AUTO -> cam.cameraControl.enableTorch(false)
             }
             field = value
         }
@@ -88,9 +88,9 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
         )
 
         pipeline.setSegmentationGap(1)
-        //pipeline.setOnFrameAvailableListener(this)
+        pipeline.setOnFrameAvailableListener(this)
         pipeline.setOrientationChangeListener(OrientationChangeListenerImpl())
-        pipeline.setOutputSurface(surface)
+        //pipeline.setOutputSurface(surface)
         pipeline.startPipeline()
         isEnabled = true
         return pipeline
@@ -106,7 +106,7 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
 
     override fun setSurface(surface: Surface?) {
         this.surface = surface
-        pipeline.setOutputSurface(this.surface)
+        //pipeline.setOutputSurface(this.surface)
     }
 
     override fun configure(cameraConfig: CameraConfig): Unit =

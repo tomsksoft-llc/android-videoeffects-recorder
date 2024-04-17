@@ -43,7 +43,7 @@ class CameraViewModelImpl @Inject constructor(
 
     private val _cameraUiState : MutableStateFlow<CameraUiState>
             = MutableStateFlow(CameraUiState(
-        flashMode = FlashMode.AUTO,
+        flashMode = FlashMode.OFF,
         expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
         primaryFiltersMode = PrimaryFiltersMode.NONE,
         smartZoom = cameraConfig.smartZoom,
@@ -62,6 +62,7 @@ class CameraViewModelImpl @Inject constructor(
                 flashMode = flashMode
             )
         }
+        Log.d("Flash", "mode: ${flashMode}")
         cameraManager.flashMode = flashMode
     }
 
