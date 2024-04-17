@@ -12,6 +12,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.repeatable
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -135,6 +140,10 @@ fun CameraUi(viewModel: ICameraViewModel) {
 				context.contentResolver.openInputStream(uri)!!
 			) // TODO [tva] check on Android 9 or below
 	}
+	// animation of taking photo
+	val alphaAnimation = remember { Animatable(0f) }
+	val alpha by alphaAnimation.asState()
+	val scope = rememberCoroutineScope()
 
 	if(!cameraUiState.isCameraInitialized){
 		Column(
@@ -152,7 +161,10 @@ fun CameraUi(viewModel: ICameraViewModel) {
 		Box {
 			// effects sdk camera feed; stays behind all other elements
 			EffectsCameraPreview(snackbarHostState, viewModel::setSurface)
-
+			// black box for taking photo animation
+			Box(modifier = Modifier
+				.matchParentSize()
+				.background(Color(0f, 0f, 0f, alpha)))
 			// elements of ui on top of the camera feed
 			Column(
 				modifier = Modifier
@@ -209,7 +221,15 @@ fun CameraUi(viewModel: ICameraViewModel) {
 				BottomBar(
 					cameraUiState = cameraUiState,
 					onFlipCameraClick = viewModel::flipCamera,
-					onCaptureClick = viewModel::captureImage,
+					onCaptureClick = {
+						scope.launch {
+							val durationMs = 200
+							alphaAnimation.animateTo(0f, snap())
+							alphaAnimation.animateTo(1f, tween(durationMs / 2))
+							alphaAnimation.animateTo(0f, tween(durationMs / 2))
+						}
+						viewModel.captureImage()
+					},
 					onLongPress = viewModel::startVideoRecording,
 					onRelease = viewModel::stopVideoRecording,
 					onFilterSettingClick = viewModel::setPrimaryFilter
