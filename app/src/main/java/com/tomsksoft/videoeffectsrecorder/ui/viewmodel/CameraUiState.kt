@@ -2,6 +2,7 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
 
 /**
  * Defines the current state of the CameraScreen

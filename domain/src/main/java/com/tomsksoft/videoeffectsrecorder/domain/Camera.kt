@@ -2,11 +2,10 @@ package com.tomsksoft.videoeffectsrecorder.domain
 
 interface Camera {
     val orientation: Int
-    /**
-     * Shows if frame source (be it CameraX directly or CameraPipeline instance) is set up
-     */
-    var isEnabled: Boolean
+    var flashMode: FlashMode //
+    var isEnabled: Boolean // Shows if frame source (be it CameraX directly or CameraPipeline instance) is set up
     var direction: Direction
+    var isFlashEnabled: Boolean
 
     enum class Direction {
         FRONT,

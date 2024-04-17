@@ -80,6 +80,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
 import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
@@ -87,7 +88,6 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ICameraViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelImpl
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelStub
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ExpandedTopBarMode
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
 import kotlinx.coroutines.launch

@@ -4,15 +4,6 @@ import androidx.annotation.StringRes
 import com.tomsksoft.videoeffectsrecorder.R
 
 /**
- * Defines current flash mode
- */
-enum class FlashMode {
-    AUTO,
-    ON,
-    OFF
-}
-
-/**
  * Defines current filter mode that can't be launched simultaneously with the others from this enum
  */
 enum class PrimaryFiltersMode(@StringRes val resourceId: Int) {

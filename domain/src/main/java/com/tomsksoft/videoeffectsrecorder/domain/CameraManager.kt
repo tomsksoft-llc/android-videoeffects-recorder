@@ -10,6 +10,7 @@ class CameraManager(
     val orientation by effectsPipelineCamera::orientation
     var direction by effectsPipelineCamera::direction
     var isEnabled by effectsPipelineCamera::isEnabled
+    var flashMode by effectsPipelineCamera::flashMode
     val cameraConfig = BehaviorSubject.createDefault(CameraConfig())
 
     private val disposable = cameraConfig.subscribe(effectsPipelineCamera::configure)
