@@ -111,5 +111,7 @@ class FrameProcessorImpl(val context: Context): FrameProcessor, AutoCloseable, O
                     setColorCorrectionMode(ColorCorrectionMode.PRESET_MODE)
                 }
             }
+            /* Sharpness */
+            setSharpeningStrength(cameraConfig.sharpnessPower ?: 0f)
         }
 }

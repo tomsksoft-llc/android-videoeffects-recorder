@@ -310,9 +310,14 @@ fun PrimaryEffectsOptions(
 						)
 					}
 					// show slider for color correction
-					ColorCorrection.COLOR_CORRECTION -> {
+					else -> {
 						RoundedButton(
-							painter = painterResource(R.drawable.ic_filter_color_correction),
+							painter = painterResource(when (cameraUiState.colorCorrectionMode) {
+								ColorCorrection.NO_FILTER -> R.drawable.ic_clear	// added this so 'when' statement stays exhaustive
+								ColorCorrection.COLOR_CORRECTION -> R.drawable.ic_filter_color_correction
+								ColorCorrection.COLOR_GRADING -> R.drawable.ic_filter_color_grading
+								ColorCorrection.PRESET -> R.drawable.ic_filter_preset
+							}),
 							onClick = {
 								onColorCorrectionModeChange(ColorCorrection.NO_FILTER)
 							},
@@ -327,34 +332,6 @@ fun PrimaryEffectsOptions(
 							modifier = Modifier
 								.weight(3f)
 								.padding(12.dp)
-						)
-
-					}
-					// show button for choosing an image reference
-					ColorCorrection.COLOR_GRADING -> {
-						RoundedButton(
-							painter = painterResource(R.drawable.ic_filter_color_grading),
-							onClick = {
-								onColorCorrectionModeChange(ColorCorrection.NO_FILTER)
-							},
-							modifier = Modifier
-								.padding(12.dp),
-							backgroundColor = Color.Yellow,
-							tint = Color.Black
-						)
-						// TODO: add button for image reference choosing 
-					}
-					// should there be some setting to configure for this color correction mode??
-					ColorCorrection.PRESET -> {
-						RoundedButton(
-							painter = painterResource(R.drawable.ic_filter_preset),
-							onClick = {
-								onColorCorrectionModeChange(ColorCorrection.NO_FILTER)
-							},
-							modifier = Modifier
-								.padding(12.dp),
-							backgroundColor = Color.Yellow,
-							tint = Color.Black
 						)
 					}
 				}
