@@ -49,7 +49,9 @@ class CameraViewModelImpl @Inject constructor(
         beautification = cameraConfig.beautification,
         isVideoRecording = cameraRecordManager.isRecording,
         isCameraInitialized = true, // TODO [tva] check if EffectsSDK is initialized
-        pipelineCameraDirection = Camera.Direction.BACK
+        pipelineCameraDirection = Camera.Direction.BACK,
+        colorCorrectionMode = ColorCorrection.NO_FILTER,
+        colorCorrectionPower = cameraConfig.colorCorrectionPower
     ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
@@ -82,7 +84,7 @@ class CameraViewModelImpl @Inject constructor(
             )
             PrimaryFiltersMode.COLOR_CORRECTION -> cameraConfig = cameraConfig.copy(
                 backgroundMode = BackgroundMode.Regular,
-                colorCorrection = ColorCorrection.COLOR_GRADING
+                colorCorrection = ColorCorrection.NO_FILTER
             )
             PrimaryFiltersMode.NONE -> cameraConfig = cameraConfig.copy(
                 backgroundMode = BackgroundMode.Regular,
@@ -105,6 +107,12 @@ class CameraViewModelImpl @Inject constructor(
                         smartZoom = if (cameraUiState.smartZoom == null) 25 else null
                     )
                 }
+
+                SecondaryFiltersMode.SHARPNESS -> {
+                    cameraUiState.copy(
+                        sharpnessPower = if (cameraUiState.sharpnessPower == null) 0.25f else null
+                    )
+                }
             }
         }
         cameraConfig = when(filtersMode) {
@@ -113,6 +121,9 @@ class CameraViewModelImpl @Inject constructor(
             )
             SecondaryFiltersMode.SMART_ZOOM -> cameraConfig.copy(
                 smartZoom = cameraConfig.smartZoom
+            )
+            SecondaryFiltersMode.SHARPNESS -> cameraConfig.copy(
+                sharpnessPower = cameraConfig.sharpnessPower
             )
         }
     }
@@ -217,7 +228,7 @@ class CameraViewModelImpl @Inject constructor(
         Log.d(TAG, "${mode.name} was chosen as color correction mode")
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
-                colorCorrection = mode
+                colorCorrectionMode = mode
             )
         }
         if (colorGradingSource == null)
@@ -226,7 +237,7 @@ class CameraViewModelImpl @Inject constructor(
             val bitmap = withContext(Dispatchers.IO) {
                 colorGradingSource.use(BitmapFactory::decodeStream)
             }
-            if (_cameraUiState.value.colorCorrection == ColorCorrection.COLOR_GRADING)
+            if (_cameraUiState.value.colorCorrectionMode == ColorCorrection.COLOR_GRADING)
                 withContext(Dispatchers.Main) {
                     cameraConfig = cameraConfig.copy(
                         colorCorrection = ColorCorrection.COLOR_GRADING,
@@ -234,5 +245,23 @@ class CameraViewModelImpl @Inject constructor(
                     )
                 }
         }
+    }
+
+    override fun setColorCorrectionPower(value: Float) {
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                colorCorrectionPower = value
+            )
+        }
+        cameraConfig = cameraConfig.copy(colorCorrectionPower = value)
+    }
+
+    override fun setSharpnessPower(value: Float) {
+        _cameraUiState.update { cameraUiState ->
+            cameraUiState.copy(
+                sharpnessPower = value
+            )
+        }
+        cameraConfig = cameraConfig.copy(sharpnessPower = value)
     }
 }

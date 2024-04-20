@@ -26,6 +26,8 @@ object CameraViewModelStub: ICameraViewModel {
     override fun setZoomPower(value: Float) = throw unimplementedError()
     override fun setBeautifyPower(value: Float) = throw unimplementedError()
     override fun setColorCorrectionMode(mode: ColorCorrection, colorGradingSource: InputStream?) = throw unimplementedError()
+    override fun setColorCorrectionPower(value: Float) = throw unimplementedError()
+    override fun setSharpnessPower(value: Float) = throw unimplementedError()
 
     private fun unimplementedError() = NotImplementedError("Stub doesn't implement any logic")
 }

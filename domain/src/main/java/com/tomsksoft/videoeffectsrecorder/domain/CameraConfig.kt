@@ -14,5 +14,7 @@ data class CameraConfig(
     val smartZoom: Int? = null,
     val beautification: Int? = null,
     val colorCorrection: ColorCorrection = ColorCorrection.NO_FILTER,
-    val colorGradingSource: Any? = null
+    val colorGradingSource: Any? = null,
+    val colorCorrectionPower: Float = 0f,
+    val sharpnessPower: Float? = null
 )

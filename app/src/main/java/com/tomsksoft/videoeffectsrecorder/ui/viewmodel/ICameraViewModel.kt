@@ -31,4 +31,6 @@ interface ICameraViewModel {
      * MUST be null if different mode is chosen
      */
     fun setColorCorrectionMode(mode: ColorCorrection, colorGradingSource: InputStream? = null)
+    fun setColorCorrectionPower(value: Float)
+    fun setSharpnessPower(value: Float)
 }

@@ -13,8 +13,10 @@ data class CameraUiState(
     val smartZoom: Int? = null,
     val beautification: Int? = null,
     val blur: Float = 0.125f,
-    val colorCorrection: ColorCorrection = ColorCorrection.NO_FILTER,
+    val colorCorrectionMode: ColorCorrection = ColorCorrection.NO_FILTER,
     val isVideoRecording: Boolean = false,
     val isCameraInitialized: Boolean = true,
-    val pipelineCameraDirection: Camera.Direction = Camera.Direction.BACK
+    val pipelineCameraDirection: Camera.Direction = Camera.Direction.BACK,
+    val colorCorrectionPower: Float = 0.125f,
+    val sharpnessPower: Float? = null
 )
