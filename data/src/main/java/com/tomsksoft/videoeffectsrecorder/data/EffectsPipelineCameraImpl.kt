@@ -2,6 +2,7 @@ package com.tomsksoft.videoeffectsrecorder.data
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.util.Log
 import android.view.Surface
 import com.effectssdk.tsvb.EffectsSDK
@@ -55,7 +56,7 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
         )
 
         pipeline.setSegmentationGap(1)
-        //pipeline.setOnFrameAvailableListener(this)
+        pipeline.setOnFrameAvailableListener(this)
         pipeline.setOrientationChangeListener(OrientationChangeListenerImpl())
         pipeline.setOutputSurface(surface)
         pipeline.startPipeline()
@@ -105,6 +106,11 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
                 ColorCorrection.COLOR_GRADING -> ColorCorrectionMode.COLOR_GRADING_MODE
                 ColorCorrection.PRESET -> ColorCorrectionMode.PRESET_MODE
             })
+            if (
+                cameraConfig.colorCorrection == ColorCorrection.COLOR_GRADING &&
+                cameraConfig.colorGradingSource != null
+            ) setColorGradingReferenceImage(cameraConfig.colorGradingSource as Bitmap)
+            setColorFilterStrength(1f) // TODO [tva] pass through config
         }
     inner class OrientationChangeListenerImpl: OrientationChangeListener {
         override fun onOrientationChanged(deviceOrientation: DeviceOrientation, rotation: Int) {

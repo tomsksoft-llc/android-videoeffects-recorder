@@ -213,13 +213,26 @@ class CameraViewModelImpl @Inject constructor(
         cameraConfig = cameraConfig.copy(beautification = percent)
     }
 
-    override fun setColorCorrectionMode(mode: ColorCorrection) {
+    override fun setColorCorrectionMode(mode: ColorCorrection, colorGradingSource: InputStream?) {
         Log.d(TAG, "${mode.name} was chosen as color correction mode")
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 colorCorrection = mode
             )
         }
-        cameraConfig = cameraConfig.copy(colorCorrection = mode)
+        if (colorGradingSource == null)
+            cameraConfig = cameraConfig.copy(colorCorrection = mode)
+        else viewModelScope.launch {
+            val bitmap = withContext(Dispatchers.IO) {
+                colorGradingSource.use(BitmapFactory::decodeStream)
+            }
+            if (_cameraUiState.value.colorCorrection == ColorCorrection.COLOR_GRADING)
+                withContext(Dispatchers.Main) {
+                    cameraConfig = cameraConfig.copy(
+                        colorCorrection = ColorCorrection.COLOR_GRADING,
+                        colorGradingSource = bitmap
+                    )
+                }
+        }
     }
 }

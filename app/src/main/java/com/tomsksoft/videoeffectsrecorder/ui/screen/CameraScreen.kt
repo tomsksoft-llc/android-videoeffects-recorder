@@ -2,6 +2,7 @@ package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import android.Manifest
 import android.util.Log
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -13,6 +14,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.IntDef
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -56,7 +58,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -91,6 +92,11 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
 import kotlinx.coroutines.launch
+
+private const val REQUEST_PICK_PHOTO_BACKGROUND = 1
+private const val REQUEST_PICK_PHOTO_GRADING_SOURCE = 2
+@IntDef(REQUEST_PICK_PHOTO_BACKGROUND, REQUEST_PICK_PHOTO_GRADING_SOURCE)
+private annotation class PickPhotoCode
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -132,12 +138,29 @@ fun CameraUi(viewModel: ICameraViewModel) {
 	val context = LocalContext.current
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
+
+	/* Photo Picker */
+	var pickPhotoRequestCode: Int? = remember { null }
 	val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-		if (uri != null)
-			viewModel.setBackground(
-				context.contentResolver.openInputStream(uri)!!
-			) // TODO [tva] check on Android 9 or below
+		if (uri == null) return@rememberLauncherForActivityResult // skip if user cancelled pick
+
+		val stream = context.contentResolver.openInputStream(uri)!!
+		when (pickPhotoRequestCode) {
+			REQUEST_PICK_PHOTO_BACKGROUND ->
+				viewModel.setBackground(stream)
+			REQUEST_PICK_PHOTO_GRADING_SOURCE ->
+				viewModel.setColorCorrectionMode(ColorCorrection.COLOR_GRADING, stream)
+		}
 	}
+	fun pickPhoto(@PickPhotoCode requestCode: Int) {
+		pickPhotoRequestCode = requestCode
+		photoPickerLauncher.launch(
+			PickVisualMediaRequest(
+				ActivityResultContracts.PickVisualMedia.ImageOnly
+			)
+		)
+	}
+	/* --- */
 
 	if(!cameraUiState.isCameraInitialized){
 		Column(
@@ -196,16 +219,15 @@ fun CameraUi(viewModel: ICameraViewModel) {
 						PrimaryEffectsOptions(
 							cameraUiState = cameraUiState,
 							snackbarHostState = snackbarHostState,
-							onPhotoPickClick = {
-								photoPickerLauncher.launch(
-									PickVisualMediaRequest(
-										ActivityResultContracts.PickVisualMedia.ImageOnly
-									)
-								)
-							},
+							onPickPhotoClick = { pickPhoto(REQUEST_PICK_PHOTO_BACKGROUND) },
 							onRemoveClick = viewModel::removeBackground,
 							onBlurSliderChange = viewModel::setBlurPower,
-							onColorCorrectionModeChange = viewModel::setColorCorrectionMode
+							onColorCorrectionModeChange = { mode ->
+								if (mode == ColorCorrection.COLOR_GRADING)
+									pickPhoto(REQUEST_PICK_PHOTO_GRADING_SOURCE)
+								else
+									viewModel.setColorCorrectionMode(mode)
+							}
 						)
 					}
 				}
@@ -225,7 +247,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 @Composable
 fun PrimaryEffectsOptions(
 	cameraUiState: CameraUiState,
-	onPhotoPickClick: () -> Unit,
+	onPickPhotoClick: () -> Unit,
 	onRemoveClick: () -> Unit,
 	onBlurSliderChange: (Float) -> Unit,
 	onColorCorrectionModeChange: (ColorCorrection) -> Unit,
@@ -244,7 +266,7 @@ fun PrimaryEffectsOptions(
 					painter = painterResource(R.drawable.ic_photo),
 					modifier = Modifier
 						.padding(12.dp),
-					onClick = onPhotoPickClick
+					onClick = onPickPhotoClick
 				)
 				RoundedButton(
 					painter = painterResource(R.drawable.ic_clear),

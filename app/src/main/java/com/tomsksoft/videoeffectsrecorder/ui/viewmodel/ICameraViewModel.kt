@@ -8,6 +8,7 @@ import java.io.InputStream
 
 interface ICameraViewModel {
     val cameraUiState: StateFlow<CameraUiState>
+    val cameraConfigData: CameraConfig
 
     fun setSurface(surface: Surface?)
     fun setFlash(flashMode: FlashMode)
@@ -23,6 +24,11 @@ interface ICameraViewModel {
     fun setBlurPower(value: Float)
     fun setZoomPower(value: Float)
     fun setBeautifyPower(value: Float)
-    fun setColorCorrectionMode(mode: ColorCorrection)
-    val cameraConfigData: CameraConfig
+
+    /**
+     * @param colorGradingSource binary representation of bitmap, required only
+     * for {@link com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection#COLOR_GRADING} mode,
+     * MUST be null if different mode is chosen
+     */
+    fun setColorCorrectionMode(mode: ColorCorrection, colorGradingSource: InputStream? = null)
 }
