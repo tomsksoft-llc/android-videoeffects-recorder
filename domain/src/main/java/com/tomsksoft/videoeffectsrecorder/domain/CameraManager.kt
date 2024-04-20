@@ -4,21 +4,16 @@ import android.view.Surface
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 
 class CameraManager(
-    private val camera: Camera,
-    private val frameProcessor: FrameProcessor
+    private val effectsPipelineCamera: EffectsPipelineCamera
 ): AutoCloseable {
-    val frameSource by frameProcessor::processedFrame
-    val orientation by camera::orientation
-    var direction by camera::direction
-    var isEnabled by camera::isEnabled
+    val frameSource by effectsPipelineCamera::processedFrame
+    val orientation by effectsPipelineCamera::orientation
+    var direction by effectsPipelineCamera::direction
+    var isEnabled by effectsPipelineCamera::isEnabled
     val cameraConfig = BehaviorSubject.createDefault(CameraConfig())
 
-    private val disposable = cameraConfig.subscribe(frameProcessor::configure)
+    private val disposable = cameraConfig.subscribe(effectsPipelineCamera::configure)
 
-    init {
-        camera.frameSource.subscribe(frameProcessor.frameSource)
-    }
-
-    fun setSurface(surface: Surface?) = frameProcessor.setSurface(surface)
+    fun setSurface(surface: Surface?) = effectsPipelineCamera.setSurface(surface)
     override fun close() = disposable.dispose()
 }

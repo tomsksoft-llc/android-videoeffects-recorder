@@ -1,5 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
+import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
 
 /**
@@ -14,5 +15,6 @@ data class CameraUiState(
     val blur: Float = 0.125f,
     val colorCorrection: ColorCorrection = ColorCorrection.NO_FILTER,
     val isVideoRecording: Boolean = false,
-    val isCameraInitialized: Boolean = true
+    val isCameraInitialized: Boolean = true,
+    val pipelineCameraDirection: Camera.Direction = Camera.Direction.BACK
 )

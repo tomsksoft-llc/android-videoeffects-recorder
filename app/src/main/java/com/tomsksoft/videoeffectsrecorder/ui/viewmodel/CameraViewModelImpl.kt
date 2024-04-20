@@ -48,7 +48,8 @@ class CameraViewModelImpl @Inject constructor(
         smartZoom = cameraConfig.smartZoom,
         beautification = cameraConfig.beautification,
         isVideoRecording = cameraRecordManager.isRecording,
-        isCameraInitialized = true // TODO [tva] check if EffectsSDK is initialized
+        isCameraInitialized = true, // TODO [tva] check if EffectsSDK is initialized
+        pipelineCameraDirection = Camera.Direction.BACK
     ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
