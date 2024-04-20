@@ -1,7 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import android.Manifest
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -13,6 +12,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.repeatable
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.annotation.IntDef
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -80,7 +84,6 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.FrameProcessor
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ICameraViewModel
@@ -151,6 +154,10 @@ fun CameraUi(viewModel: ICameraViewModel) {
 				viewModel.setColorCorrectionMode(ColorCorrection.COLOR_GRADING, stream)
 		}
 	}
+	// animation of taking photo
+	val alphaAnimation = remember { Animatable(0f) }
+	val alpha by alphaAnimation.asState()
+	val scope = rememberCoroutineScope()
 	fun pickPhoto(@PickPhotoCode requestCode: Int) {
 		pickPhotoRequestCode = requestCode
 		photoPickerLauncher.launch(
@@ -177,7 +184,10 @@ fun CameraUi(viewModel: ICameraViewModel) {
 		Box {
 			// effects sdk camera feed; stays behind all other elements
 			EffectsCameraPreview(snackbarHostState, viewModel::setSurface)
-
+			// black box for taking photo animation
+			Box(modifier = Modifier
+				.matchParentSize()
+				.background(Color(0f, 0f, 0f, alpha)))
 			// elements of ui on top of the camera feed
 			Column(
 				modifier = Modifier
@@ -235,7 +245,15 @@ fun CameraUi(viewModel: ICameraViewModel) {
 				BottomBar(
 					cameraUiState = cameraUiState,
 					onFlipCameraClick = viewModel::flipCamera,
-					onCaptureClick = viewModel::captureImage,
+					onCaptureClick = {
+						scope.launch {
+							val durationMs = 200
+							alphaAnimation.animateTo(0f, snap())
+							alphaAnimation.animateTo(1f, tween(durationMs / 2))
+							alphaAnimation.animateTo(0f, tween(durationMs / 2))
+						}
+						viewModel.captureImage()
+					},
 					onLongPress = viewModel::startVideoRecording,
 					onRelease = viewModel::stopVideoRecording,
 					onFilterSettingClick = viewModel::setPrimaryFilter
@@ -498,7 +516,6 @@ private fun EffectsCameraPreview(
 
 				view.holder.addCallback(object : SurfaceHolder.Callback {
 					override fun surfaceCreated(holder: SurfaceHolder) {
-						Log.d("AndroidView", "surfaceCreated")
 						updateSurface(holder.surface)
 					}
 
