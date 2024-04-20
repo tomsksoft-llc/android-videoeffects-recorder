@@ -2,6 +2,7 @@ package com.tomsksoft.videoeffectsrecorder.domain
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class CameraRecordManager(
@@ -27,8 +28,16 @@ class CameraRecordManager(
         }
 
     fun takePhoto() {
-        val frame = cameraManager.frameSource.blockingFirst()
         scope.launch {
+            val frame: Any
+            if (cameraManager.flashMode == FlashMode.AUTO) {
+                cameraManager.isFlashEnabled = true
+                delay(1000L)
+                frame = cameraManager.frameSource.blockingFirst()
+                cameraManager.isFlashEnabled = false
+            } else {
+                frame = cameraManager.frameSource.blockingFirst()
+            }
             photoPicker.takePhoto(
                 frame,
                 cameraManager.orientation,

@@ -12,6 +12,7 @@ import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +43,7 @@ class CameraViewModelImpl @Inject constructor(
 
     private val _cameraUiState : MutableStateFlow<CameraUiState>
             = MutableStateFlow(CameraUiState(
-        flashMode = FlashMode.AUTO,
+        flashMode = FlashMode.OFF,
         expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
         primaryFiltersMode = PrimaryFiltersMode.NONE,
         smartZoom = cameraConfig.smartZoom,
@@ -63,7 +64,8 @@ class CameraViewModelImpl @Inject constructor(
                 flashMode = flashMode
             )
         }
-        // TODO [fmv]: add usecase interaction
+        Log.d("Flash", "mode: ${flashMode}")
+        cameraManager.flashMode = flashMode
     }
 
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) {

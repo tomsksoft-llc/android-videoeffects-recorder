@@ -4,6 +4,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.Surface
+import androidx.camera.core.CameraSelector
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import com.effectssdk.tsvb.EffectsSDK
 import com.effectssdk.tsvb.pipeline.CameraPipeline
 import com.effectssdk.tsvb.pipeline.ColorCorrectionMode
@@ -16,16 +21,27 @@ import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.domain.EffectsPipelineCamera
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlin.math.abs
 
-class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, AutoCloseable, OnFrameAvailableListener {
+class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
     companion object {
         private val factory = EffectsSDK.createSDKFactory()
     }
 
+    override var lifecycle = LifecycleRegistry(this)
     override val processedFrame = BehaviorSubject.create<Any>()
     override var orientation: Int = 0
+    override var flashMode: FlashMode = FlashMode.OFF
+        set(value) {
+            when (value) {
+                FlashMode.ON -> cam.cameraControl.enableTorch(true)
+                FlashMode.OFF -> cam.cameraControl.enableTorch(false)
+                FlashMode.AUTO -> cam.cameraControl.enableTorch(false)
+            }
+            field = value
+        }
     override var direction: Camera.Direction = Camera.Direction.BACK
         set(value) {
             field = value
@@ -39,12 +55,29 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
                 }
             )
         }
+    override var isFlashEnabled: Boolean = false
+        set(value) {
+            when (flashMode) {
+                FlashMode.ON -> return
+                FlashMode.OFF -> return
+                FlashMode.AUTO -> {
+                    field = value
+                    cam.cameraControl.enableTorch(value)
+                }
+            }
+        }
     override var isEnabled: Boolean = false
     private var pipeline: CameraPipeline
     private var surface: Surface? = null
+    private val cam = ProcessCameraProvider
+        .getInstance(context).get()
+        .bindToLifecycle(
+            this,
+            CameraSelector.DEFAULT_BACK_CAMERA)
 
     init {
         pipeline = start(context, com.effectssdk.tsvb.Camera.BACK)
+        lifecycle.currentState = Lifecycle.State.CREATED
     }
 
     private fun start(context: Context, cameraDirection: com.effectssdk.tsvb.Camera): CameraPipeline {
