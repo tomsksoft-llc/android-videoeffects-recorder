@@ -627,10 +627,10 @@ private fun TopBar(
 				)
 				// <--- three secondary filters options
 
-				ImageButton( // secondary options
+				/*ImageButton( // TODO [tva] add secondary options
 					painter = painterResource(R.drawable.ic_more),
 					onClick = {  }
-				)
+				)*/
 			}
 		}
 
