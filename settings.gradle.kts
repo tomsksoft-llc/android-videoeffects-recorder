@@ -3,9 +3,6 @@ pluginManagement {
 		google()
 		mavenCentral()
 		gradlePluginPortal()
-		flatDir {
-			dirs("libs")
-		}
 	}
 }
 dependencyResolutionManagement {
@@ -20,3 +17,4 @@ rootProject.name = "Video Effects Recorder"
 include(":app")
 include(":domain")
 include(":data")
+include(":effects")
