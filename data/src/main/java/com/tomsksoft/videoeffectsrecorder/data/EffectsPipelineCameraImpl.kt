@@ -148,14 +148,7 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
         }
     inner class OrientationChangeListenerImpl: OrientationChangeListener {
         override fun onOrientationChanged(deviceOrientation: DeviceOrientation, rotation: Int) {
-            val degree = when {
-                abs(rotation - 90) <= 45 -> 90
-                abs(rotation - 180) <= 45 -> 180
-                abs(rotation - 270) <= 45 -> 270
-                else -> 0
-            }
-            if (degree != rotation)
-                orientation = degree
+            orientation = 360 - rotation // rotation in this callback is counted counter-clockwise, but clockwise degrees are required for android.media.MediaRecorder
         }
     }
 }
