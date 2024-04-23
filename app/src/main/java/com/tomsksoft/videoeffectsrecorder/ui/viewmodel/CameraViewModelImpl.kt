@@ -28,7 +28,7 @@ import javax.inject.Inject
 class CameraViewModelImpl @Inject constructor(
     private val cameraRecordManager: CameraRecordManager,
     private val cameraManager: CameraManager,
-    app: Application
+    private val app: Application
 ): AndroidViewModel(app), ICameraViewModel {
     companion object {
         private const val TAG = "Camera View Model"

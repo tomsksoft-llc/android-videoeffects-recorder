@@ -102,7 +102,7 @@ private annotation class PickPhotoCode
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraScreen() {
+fun CameraScreen(onGalleryClick: () -> Unit) {
 	val context = LocalContext.current
 
 	// permissions
@@ -126,17 +126,17 @@ fun CameraScreen() {
 	}
 
 	// ui
-	CameraUi(hiltViewModel<CameraViewModelImpl>())
+	CameraUi(hiltViewModel<CameraViewModelImpl>(), onGalleryClick)
 }
 
 @Preview
 @Composable
 fun CameraPreview() {
-	CameraUi(CameraViewModelStub)
+	CameraUi(CameraViewModelStub, {})
 }
 
 @Composable
-fun CameraUi(viewModel: ICameraViewModel) {
+fun CameraUi(viewModel: ICameraViewModel, onGalleryClick: () -> Unit) {
 	val context = LocalContext.current
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
@@ -202,6 +202,7 @@ fun CameraUi(viewModel: ICameraViewModel) {
 					viewModel::toggleQuickSettingsIndicator,
 					viewModel::setFlash,
 					viewModel::setSecondaryFilters,
+					onGalleryClick
 				)
 				Box(
 					modifier = Modifier
@@ -540,7 +541,8 @@ private fun TopBar(
 	snackbarHostState: SnackbarHostState,
 	onToggleTopBar: (ExpandedTopBarMode) -> Unit,
 	onFlashSettingClick: (FlashMode) -> Unit,
-	onFilterSettingClick: (SecondaryFiltersMode) -> Unit
+	onFilterSettingClick: (SecondaryFiltersMode) -> Unit,
+	onGalleryClick: () -> Unit
 ){
 	val scope = rememberCoroutineScope()
 	Row(
@@ -627,10 +629,10 @@ private fun TopBar(
 				)
 				// <--- three secondary filters options
 
-				/*ImageButton( // TODO [tva] add secondary options
+				ImageButton( // TODO [tva] add secondary options
 					painter = painterResource(R.drawable.ic_more),
-					onClick = {  }
-				)*/
+					onClick = onGalleryClick
+				)
 			}
 		}
 

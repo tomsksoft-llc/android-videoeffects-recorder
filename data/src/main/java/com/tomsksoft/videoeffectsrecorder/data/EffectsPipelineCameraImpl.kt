@@ -88,7 +88,7 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
         )
 
         pipeline.setSegmentationGap(1)
-        pipeline.setOnFrameAvailableListener(this)
+        //pipeline.setOnFrameAvailableListener(this)
         pipeline.setOrientationChangeListener(OrientationChangeListenerImpl())
         pipeline.setOutputSurface(surface)
         pipeline.startPipeline()
