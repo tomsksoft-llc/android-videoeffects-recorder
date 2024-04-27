@@ -37,6 +37,6 @@ object BoundaryInterfacesModule {
 
     @Provides
     @Singleton
-    fun provideMediaPicker(): MediaPicker =
-        MediaPickerImpl()
+    fun provideMediaPicker(@ApplicationContext context: Context): MediaPicker =
+        MediaPickerImpl(context)
 }

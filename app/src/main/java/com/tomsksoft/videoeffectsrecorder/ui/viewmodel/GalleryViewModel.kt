@@ -6,4 +6,5 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface GalleryViewModel {
     val mediaList: Observable<List<Uri>>
+    fun loadMediaList()
 }

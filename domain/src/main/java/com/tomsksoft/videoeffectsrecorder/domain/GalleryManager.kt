@@ -11,4 +11,8 @@ class GalleryManager(
     val mediaList: Observable<List<Uri>> = mediaPicker.mediaList
         .map{it as List<Uri>}
         .observeOn(Schedulers.io())
+
+    fun loadMedia() {
+        mediaPicker.loadVideos()
+    }
 }

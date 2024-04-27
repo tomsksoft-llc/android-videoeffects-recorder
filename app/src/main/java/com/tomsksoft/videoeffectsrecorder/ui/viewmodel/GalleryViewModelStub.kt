@@ -8,4 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 object GalleryViewModelStub: GalleryViewModel {
     override val mediaList: Observable<List<Uri>> = BehaviorSubject.create()
+    override fun loadMediaList() = throw unimplementedError()
+
+    private fun unimplementedError() = NotImplementedError("Stub doesn't implement any logic") //maybe move this out somewhere
 }

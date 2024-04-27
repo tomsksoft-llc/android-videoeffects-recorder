@@ -1,6 +1,8 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
+import android.media.effect.Effect
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -10,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rxjava3.subscribeAsState
 import androidx.compose.ui.Modifier
@@ -33,7 +36,9 @@ fun GalleryScreenLocal(
     BackHandler {
         onCameraClick()
     }
-
+    LaunchedEffect(Unit) {
+        viewModel.loadMediaList()
+    }
     val mediaList: List<Uri> by viewModel.mediaList.subscribeAsState(initial = listOf())
 
     Box(
@@ -52,6 +57,7 @@ fun MediaGrid(
     LazyVerticalGrid(
         columns = GridCells.Adaptive(100.dp)
     ) {
+        Log.d("MediaGrid", "number of videos ${mediaList.count()}")
         items(
             mediaList
         ) {mediaItem ->

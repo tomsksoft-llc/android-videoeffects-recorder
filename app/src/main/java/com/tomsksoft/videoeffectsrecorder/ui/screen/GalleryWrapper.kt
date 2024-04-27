@@ -58,7 +58,7 @@ fun GalleryNavigationBar(
             onClick = onGalleryLocalClick,
             icon = {
                 NavigationBarIcon(
-                    icon = R.drawable.ic_photo,
+                    icon = R.drawable.ic_photo, // TODO [fmv] add appropriate icon
                     text = "Effects SDK"
                 )
             }
@@ -68,7 +68,7 @@ fun GalleryNavigationBar(
             onClick = onGalleryAllClick,
             icon = {
                 NavigationBarIcon(
-                    icon = R.drawable.ic_more,
+                    icon = R.drawable.ic_more, // TODO [fmv] add appropriate icon
                     text = "Global storage"
                 )
             }
@@ -86,7 +86,7 @@ fun NavigationBarIcon(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            painter = painterResource(id = icon), // TODO [fmv] add appropriate icon
+            painter = painterResource(id = icon),
             contentDescription = null,
             tint = color
         )
