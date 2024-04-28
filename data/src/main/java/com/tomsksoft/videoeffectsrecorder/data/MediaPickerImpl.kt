@@ -5,6 +5,7 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
 import android.database.Cursor
+import android.database.MergeCursor
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
@@ -22,11 +23,13 @@ class MediaPickerImpl(val context: Context): MediaPicker {
         get() = context.contentResolver
 
     /*Content resolver query parameters*/
-    private val projection: Array<String> = arrayOf(
-        MediaStore.Video.Media._ID,
-        MediaStore.Video.Media.DISPLAY_NAME,
-        MediaStore.Video.Media.DATE_TAKEN,
-        MediaStore.Video.Media.DURATION
+    private val projection = arrayOf(
+        MediaStore.MediaColumns._ID,
+        MediaStore.MediaColumns.RELATIVE_PATH,
+        MediaStore.MediaColumns.DISPLAY_NAME,
+        MediaStore.MediaColumns.DURATION,
+        MediaStore.MediaColumns.MIME_TYPE,
+        MediaStore.MediaColumns.DATE_TAKEN
     )
     private val selectionClause: String? = null
     private val selectionArgs: Array<String>? = null
@@ -36,12 +39,23 @@ class MediaPickerImpl(val context: Context): MediaPicker {
     private var cursor: Cursor? = null
 
     override fun loadVideos() {
-        cursor = contentResolver.query(
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI, // TODO: make this for both photo and video
-            projection,
-            selectionClause,
-            selectionArgs,
-            sortOrder
+        cursor = MergeCursor(
+            arrayOf(
+                contentResolver.query(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    selectionClause,
+                    selectionArgs,
+                    sortOrder
+                ),
+                contentResolver.query(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    selectionClause,
+                    selectionArgs,
+                    sortOrder
+                )
+            )
         )
         Log.d(TAG, "Query was called with ${cursor?.count} rows retrieved")
         mediaList.onNext(loadUriList(cursor))
@@ -52,9 +66,15 @@ class MediaPickerImpl(val context: Context): MediaPicker {
         val uriList = mutableListOf<Uri>()
         cursor?.moveToFirst()
         while (cursor!!.moveToNext()) {
+            var contentUri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            if (cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)).contains("image"))
+                contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            else if (cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)).contains("video"))
+                contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
             val videoUri: Uri = ContentUris
-                .withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                    cursor.getInt(cursor.getColumnIndex(MediaStore.Video.Media._ID)).toLong()
+                .withAppendedId(
+                    contentUri,
+                    cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID)).toLong()
                 )
             uriList.add(videoUri)
             Log.d(TAG, "${videoUri}")

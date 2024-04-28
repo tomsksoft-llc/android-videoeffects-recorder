@@ -34,7 +34,8 @@ object UiRouter {
 					val galleryNavController = rememberNavController()
 					GalleryWrapper(
 						onGalleryLocalClick = { galleryNavController.navigate("GalleryLocalScreen") },
-						onGalleryAllClick =  { galleryNavController.navigate("GalleryAllClick") },
+						onGalleryAllClick =  { galleryNavController.navigate("GalleryAllScreen") },
+						onCameraClick = {navController.navigate("CameraScreen")},
 						mainContent = {
 							NavHost(
 								navController = galleryNavController,
@@ -47,7 +48,7 @@ object UiRouter {
 										onCameraClick = { navController.navigate("CameraScreen") }
 									)
 								}
-								composable(route = "GalleryAllClick") {
+								composable(route = "GalleryAllScreen") {
 									GalleryScreenAll(hiltViewModel<GalleryViewModelImpl>())
 								}
 							}
