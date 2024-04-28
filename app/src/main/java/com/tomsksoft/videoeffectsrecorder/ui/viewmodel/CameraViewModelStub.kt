@@ -13,12 +13,11 @@ object CameraViewModelStub: ICameraViewModel {
     override val cameraConfigData: CameraConfig = CameraConfig()
 
     override fun setSurface(surface: Surface?) = throw unimplementedError()
-    override fun setFlash(flashMode: FlashMode) = throw unimplementedError()
+    override fun setFlash() = throw unimplementedError()
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) = throw unimplementedError()
     override fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) = throw unimplementedError()
     override fun setBackground(bitmapStream: InputStream) = throw unimplementedError()
     override fun removeBackground() = throw unimplementedError()
-    override fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode) = throw unimplementedError()
     override fun flipCamera() = throw unimplementedError()
     override fun captureImage() = throw unimplementedError()
     override fun startVideoRecording() = throw unimplementedError()

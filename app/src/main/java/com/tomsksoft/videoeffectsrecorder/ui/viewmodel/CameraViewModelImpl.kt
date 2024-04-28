@@ -13,6 +13,7 @@ import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
+import com.tomsksoft.videoeffectsrecorder.ui.getNextFlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +45,6 @@ class CameraViewModelImpl @Inject constructor(
     private val _cameraUiState : MutableStateFlow<CameraUiState>
             = MutableStateFlow(CameraUiState(
         flashMode = FlashMode.OFF,
-        expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
         primaryFiltersMode = PrimaryFiltersMode.NONE,
         smartZoom = cameraConfig.smartZoom,
         beautification = cameraConfig.beautification,
@@ -58,14 +58,14 @@ class CameraViewModelImpl @Inject constructor(
 
     override fun setSurface(surface: Surface?) = cameraManager.setSurface(surface)
 
-    override fun setFlash(flashMode: FlashMode) {
+    override fun setFlash() {
         _cameraUiState.update{cameraUiState ->
             cameraUiState.copy(
-                flashMode = flashMode
+                flashMode = cameraUiState.flashMode.getNextFlashMode()
             )
         }
-        Log.d("Flash", "mode: ${flashMode}")
-        cameraManager.flashMode = flashMode
+        Log.d("Flash", "mode: ${cameraUiState.value.flashMode}")
+        cameraManager.flashMode = cameraUiState.value.flashMode
     }
 
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) {
@@ -150,14 +150,6 @@ class CameraViewModelImpl @Inject constructor(
             background = null,
             backgroundMode = BackgroundMode.Remove
         )
-    }
-
-    override fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode) {
-        _cameraUiState.update { cameraUiState ->
-            cameraUiState.copy(
-                expandedTopBarMode = expandedTopBarMode
-            )
-        }
     }
 
     override fun flipCamera() {

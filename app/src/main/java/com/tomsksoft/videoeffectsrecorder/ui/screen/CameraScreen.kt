@@ -90,7 +90,6 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ICameraViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelImpl
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelStub
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ExpandedTopBarMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
 import kotlinx.coroutines.launch
@@ -199,7 +198,6 @@ fun CameraUi(viewModel: ICameraViewModel) {
 				TopBar(
 					cameraUiState,
 					snackbarHostState,
-					viewModel::toggleQuickSettingsIndicator,
 					viewModel::setFlash,
 					viewModel::setSecondaryFilters,
 				)
@@ -538,8 +536,7 @@ private fun EffectsCameraPreview(
 private fun TopBar(
 	cameraUiState: CameraUiState,
 	snackbarHostState: SnackbarHostState,
-	onToggleTopBar: (ExpandedTopBarMode) -> Unit,
-	onFlashSettingClick: (FlashMode) -> Unit,
+	onFlashSettingClick: () -> Unit,
 	onFilterSettingClick: (SecondaryFiltersMode) -> Unit
 ){
 	val scope = rememberCoroutineScope()
@@ -549,90 +546,60 @@ private fun TopBar(
 			.fillMaxWidth()
 			.background(Color.Transparent)
 	) {
-		when(cameraUiState.expandedTopBarMode){
-			ExpandedTopBarMode.FLASH -> {
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_flash_off),
-					onClick = {
-						onFlashSettingClick(FlashMode.OFF)
-						onToggleTopBar(ExpandedTopBarMode.DEFAULT)
+		ImageButton( // flash
+			painter = painterResource(when (cameraUiState.flashMode) {
+				FlashMode.AUTO -> R.drawable.ic_flash_auto
+				FlashMode.ON -> R.drawable.ic_flash_on
+				FlashMode.OFF -> R.drawable.ic_flash_off
+			}),
+			onClick = { onFlashSettingClick() }
+		)
+
+		// ---> three secondary filters options
+		ImageButton(
+			painter = painterResource(id = R.drawable.ic_filter_beautify),
+			onClick = {
+				onFilterSettingClick(SecondaryFiltersMode.BEAUTIFY)
+				if (cameraUiState.beautification == null) {
+					scope.launch {
+						snackbarHostState.showSnackbar("Beautify enabled")
 					}
-				)
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_flash_auto),
-					onClick = {
-						onFlashSettingClick(FlashMode.AUTO)
-						onToggleTopBar(ExpandedTopBarMode.DEFAULT)
+				}
+			},
+			tint = if (cameraUiState.beautification != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
+		)
+
+		ImageButton(
+			painter = painterResource(id = R.drawable.ic_filter_smart_zoom),
+			onClick = {
+				onFilterSettingClick(SecondaryFiltersMode.SMART_ZOOM)
+				if (cameraUiState.smartZoom == null) {
+					scope.launch {
+						snackbarHostState.showSnackbar("Smart Zoom enabled")
 					}
-				)
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_flash_on),
-					onClick = {
-						onFlashSettingClick(FlashMode.ON)
-						onToggleTopBar(ExpandedTopBarMode.DEFAULT)
+				}
+			},
+			tint = if (cameraUiState.smartZoom != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
+		)
+
+		ImageButton(
+			painter = painterResource(id = R.drawable.ic_filter),
+			onClick = {
+				onFilterSettingClick(SecondaryFiltersMode.SHARPNESS)
+				if (cameraUiState.sharpnessPower == null) {
+					scope.launch {
+						snackbarHostState.showSnackbar("Sharpness enabled")
 					}
-				)
-			}
-			ExpandedTopBarMode.SETTINGS -> {
-				//TODO [fmv] expanded camera settings
-			}
-			ExpandedTopBarMode.DEFAULT -> {
-				ImageButton( // flash
-					painter = painterResource(when (cameraUiState.flashMode) {
-						FlashMode.AUTO -> R.drawable.ic_flash_auto
-						FlashMode.ON -> R.drawable.ic_flash_on
-						FlashMode.OFF -> R.drawable.ic_flash_off
-					}),
-					onClick = { onToggleTopBar(ExpandedTopBarMode.FLASH) }
-				)
+				}
+			},
+			tint = if (cameraUiState.sharpnessPower != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
+		)
+		// <--- three secondary filters options
 
-				// ---> three secondary filters options
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_filter_beautify),
-					onClick = {
-						onFilterSettingClick(SecondaryFiltersMode.BEAUTIFY)
-						if (cameraUiState.beautification == null) {
-							scope.launch {
-								snackbarHostState.showSnackbar("Beautify enabled")
-							}
-						}
-					},
-					tint = if (cameraUiState.beautification != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
-				)
-
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_filter_smart_zoom),
-					onClick = {
-						onFilterSettingClick(SecondaryFiltersMode.SMART_ZOOM)
-						if (cameraUiState.smartZoom == null) {
-							scope.launch {
-								snackbarHostState.showSnackbar("Smart Zoom enabled")
-							}
-						}
-					},
-					tint = if (cameraUiState.smartZoom != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
-				)
-
-				ImageButton(
-					painter = painterResource(id = R.drawable.ic_filter),
-					onClick = {
-						onFilterSettingClick(SecondaryFiltersMode.SHARPNESS)
-						if (cameraUiState.sharpnessPower == null) {
-							scope.launch {
-								snackbarHostState.showSnackbar("Sharpness enabled")
-							}
-						}
-					},
-					tint = if (cameraUiState.sharpnessPower != null) Color.Yellow else MaterialTheme.colorScheme.onPrimary
-				)
-				// <--- three secondary filters options
-
-				/*ImageButton( // TODO [tva] add secondary options
-					painter = painterResource(R.drawable.ic_more),
-					onClick = {  }
-				)*/
-			}
-		}
+		ImageButton( // TODO [tva] add secondary options
+			painter = painterResource(R.drawable.ic_more),
+			onClick = {  }
+		)
 
 	}
 }
