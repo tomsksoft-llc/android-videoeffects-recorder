@@ -28,6 +28,7 @@ androidMaterial = "1.11.0"
 junit = "4.13.2"
 hilt = "2.51"
 hiltNavigationCompose = "1.2.0"
+coil = "2.6.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCore" }
@@ -70,6 +71,9 @@ android-material = { group = "com.google.android.material", name = "material", v
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
+coil-kt-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil"}
+coil-kt-video = { group = "io.coil-kt", name = "coil-video", version.ref = "coil"}
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }

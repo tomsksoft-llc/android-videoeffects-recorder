@@ -101,4 +101,8 @@ dependencies {
 	kapt(libs.hilt.android.compiler)
 	implementation(libs.hilt.android)
 	implementation(libs.hilt.navigation.compose)
+
+	/*Coil*/
+	implementation(libs.coil.kt.compose)
+	implementation(libs.coil.kt.video)
 }
