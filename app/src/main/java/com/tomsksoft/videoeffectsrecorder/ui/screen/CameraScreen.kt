@@ -83,6 +83,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
+import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
@@ -457,12 +458,18 @@ fun SecondaryEffectsOptions(
 }
 
 @Composable
-private fun ImageButton(painter: Painter, onClick: () -> Unit, tint: Color = MaterialTheme.colorScheme.onPrimary) {
-	IconButton(onClick = onClick) {
+private fun ImageButton(
+	painter: Painter,
+	onClick: () -> Unit,
+	tint: Color = MaterialTheme.colorScheme.onPrimary,
+	disabledTint: Color = Color.Gray,
+	enabled: Boolean = true
+) {
+	IconButton(onClick = onClick, enabled = enabled) {
 		Icon(
 			painter = painter,
 			contentDescription = null,
-			tint = tint
+			tint = if (enabled) tint else disabledTint
 		)
 	}
 }
@@ -552,7 +559,8 @@ private fun TopBar(
 				FlashMode.ON -> R.drawable.ic_flash_on
 				FlashMode.OFF -> R.drawable.ic_flash_off
 			}),
-			onClick = { onFlashSettingClick() }
+			onClick = { onFlashSettingClick() },
+			enabled = cameraUiState.pipelineCameraDirection == Camera.Direction.BACK
 		)
 
 		// ---> three secondary filters options

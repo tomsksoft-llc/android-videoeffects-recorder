@@ -64,7 +64,6 @@ class CameraViewModelImpl @Inject constructor(
                 flashMode = cameraUiState.flashMode.getNextFlashMode()
             )
         }
-        Log.d("Flash", "mode: ${cameraUiState.value.flashMode}")
         cameraManager.flashMode = cameraUiState.value.flashMode
     }
 
@@ -158,6 +157,14 @@ class CameraViewModelImpl @Inject constructor(
                 Camera.Direction.FRONT
             else
                 Camera.Direction.BACK
+
+        _cameraUiState.update {cameraUiState ->
+            cameraUiState.copy(
+                pipelineCameraDirection = cameraManager.direction,
+                // no flash available for front camera
+                flashMode = if (cameraManager.direction == Camera.Direction.FRONT) FlashMode.OFF else cameraUiState.flashMode
+            )
+        }
     }
 
     override fun captureImage() {
