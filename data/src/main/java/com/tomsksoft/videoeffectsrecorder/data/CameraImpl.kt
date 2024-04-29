@@ -72,7 +72,8 @@ class CameraImpl(val context: Context): Camera, AutoCloseable, OnFrameAvailableL
         .getInstance(context).get()
         .bindToLifecycle(
             this,
-            CameraSelector.DEFAULT_BACK_CAMERA)
+            CameraSelector.DEFAULT_BACK_CAMERA
+        )
 
     init {
         pipeline = start(context, com.effectssdk.tsvb.Camera.BACK)
