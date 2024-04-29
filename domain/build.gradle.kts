@@ -31,11 +31,11 @@ android {
 
 dependencies {
 	implementation(libs.androidx.core.ktx)
-	implementation(libs.androidx.appcompat)
-	implementation(libs.android.material)
+	implementation(libs.androidx.coroutines)
+
 	testImplementation(libs.junit)
 	androidTestImplementation(libs.androidx.test.ext)
-	androidTestImplementation(libs.androidx.test.espresso)
+
 	/* RxJava */
 	implementation(libs.rxjava3.rxjava)
 }

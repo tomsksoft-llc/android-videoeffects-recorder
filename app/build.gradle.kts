@@ -59,7 +59,6 @@ dependencies {
 	implementation(project(mapOf("path" to ":data")))
 
 	implementation(libs.androidx.core.ktx)
-	implementation(libs.androidx.appcompat)
 	implementation(libs.androidx.lifecycle.runtimeCompose)
 	implementation(libs.androidx.lifecycle.viewModelCompose)
 	implementation(libs.androidx.activity.compose)
@@ -72,9 +71,6 @@ dependencies {
 	implementation(libs.androidx.compose.material3.android)
 	implementation(libs.androidx.navigation.compose)
 
-	testImplementation(libs.junit)
-	androidTestImplementation(libs.androidx.test.ext)
-	androidTestImplementation(libs.androidx.test.espresso)
 	androidTestImplementation(platform(libs.androidx.compose.bom))
 	androidTestImplementation(libs.androidx.compose.ui.test)
 	debugImplementation(libs.androidx.compose.ui.tooling)
@@ -92,10 +88,6 @@ dependencies {
 	implementation(libs.flogger.system.backend)
 	implementation(libs.guava)
 	implementation(files("../libs/effects.aar"))
-	implementation(libs.androidx.camera.camera2)
-	implementation(libs.androidx.camera.extensions)
-	implementation(libs.androidx.camera.lifecycle)
-	implementation(libs.androidx.camera.view)
 
 	/* Hilt */
 	kapt(libs.hilt.android.compiler)
