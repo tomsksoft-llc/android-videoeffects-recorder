@@ -16,11 +16,11 @@ import com.effectssdk.tsvb.pipeline.DeviceOrientation
 import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
 import com.effectssdk.tsvb.pipeline.OrientationChangeListener
 import com.effectssdk.tsvb.pipeline.PipelineMode
-import com.tomsksoft.videoeffectsrecorder.domain.BackgroundMode
-import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.Camera
-import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
+import com.tomsksoft.videoeffectsrecorder.domain.entity.BackgroundMode
+import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
+import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlin.math.abs
 

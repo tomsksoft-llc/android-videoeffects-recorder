@@ -1,6 +1,8 @@
-package com.tomsksoft.videoeffectsrecorder.domain
+package com.tomsksoft.videoeffectsrecorder.domain.usecase
 
 import android.view.Surface
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 
 class CameraManager(

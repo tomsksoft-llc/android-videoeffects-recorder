@@ -1,9 +1,9 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.view.Surface
-import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
+import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
+import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream

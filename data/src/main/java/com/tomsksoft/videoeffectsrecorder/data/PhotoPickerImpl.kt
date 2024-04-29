@@ -7,9 +7,10 @@ import android.graphics.Bitmap
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.graphics.rotationMatrix
-import com.tomsksoft.videoeffectsrecorder.domain.PhotoPicker
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
 
-class PhotoPickerImpl(private val context: Context, private val directoryName: String): PhotoPicker {
+class PhotoPickerImpl(private val context: Context, private val directoryName: String):
+    PhotoPicker {
 
     private val contentResolver: ContentResolver
         get() = context.contentResolver

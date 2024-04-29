@@ -1,4 +1,4 @@
-package com.tomsksoft.videoeffectsrecorder.domain
+package com.tomsksoft.videoeffectsrecorder.domain.entity
 
 enum class BackgroundMode {
     Regular,

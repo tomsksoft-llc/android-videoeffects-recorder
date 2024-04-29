@@ -16,7 +16,7 @@ import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Surface
-import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
