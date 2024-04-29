@@ -19,19 +19,18 @@ import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.BackgroundMode
 import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.EffectsPipelineCamera
 import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlin.math.abs
 
-class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
+class CameraImpl(val context: Context): Camera, AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
     companion object {
         private val factory = EffectsSDK.createSDKFactory()
     }
 
     override var lifecycle = LifecycleRegistry(this)
-    override val processedFrame = BehaviorSubject.create<Any>()
+    override val frame = BehaviorSubject.create<Any>()
     override var orientation: Int = 0
     override var flashMode: FlashMode = FlashMode.OFF
         set(value) {
@@ -97,7 +96,7 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
     }
 
     override fun onNewFrame(bitmap: Bitmap) =
-        processedFrame.onNext(FrameMapper.toAny(bitmap))
+        frame.onNext(FrameMapper.toAny(bitmap))
 
     override fun close() {
         isEnabled = false

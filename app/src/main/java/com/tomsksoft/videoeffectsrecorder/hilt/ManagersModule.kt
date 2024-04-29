@@ -1,8 +1,8 @@
 package com.tomsksoft.videoeffectsrecorder.hilt
 
+import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.CameraRecordManager
-import com.tomsksoft.videoeffectsrecorder.domain.EffectsPipelineCamera
 import com.tomsksoft.videoeffectsrecorder.domain.PhotoPicker
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
 import dagger.Module
@@ -16,8 +16,8 @@ import javax.inject.Singleton
 object ManagersModule {
     @Provides
     @Singleton
-    fun provideCameraManager(effectsPipelineCamera: EffectsPipelineCamera) =
-        CameraManager(effectsPipelineCamera)
+    fun provideCameraManager(camera: Camera) =
+        CameraManager(camera)
 
     @Provides
     @Singleton

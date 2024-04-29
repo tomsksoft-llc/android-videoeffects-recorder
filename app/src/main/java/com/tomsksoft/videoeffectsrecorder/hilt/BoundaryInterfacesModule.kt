@@ -2,10 +2,10 @@ package com.tomsksoft.videoeffectsrecorder.hilt
 
 import android.content.Context
 import com.tomsksoft.videoeffectsrecorder.BuildConfig
-import com.tomsksoft.videoeffectsrecorder.data.EffectsPipelineCameraImpl
+import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.PhotoPickerImpl
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
-import com.tomsksoft.videoeffectsrecorder.domain.EffectsPipelineCamera
+import com.tomsksoft.videoeffectsrecorder.domain.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.VideoRecorder
 import com.tomsksoft.videoeffectsrecorder.domain.PhotoPicker
 import dagger.Module
@@ -25,8 +25,8 @@ object BoundaryInterfacesModule {
 
     @Provides
     @Singleton
-    fun provideEffectsPipelineCamera(@ApplicationContext context: Context): EffectsPipelineCamera =
-        EffectsPipelineCameraImpl(context)
+    fun provideCamera(@ApplicationContext context: Context): Camera =
+        CameraImpl(context)
 
     @Provides
     @Singleton
