@@ -6,8 +6,8 @@ import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import com.tomsksoft.videoeffectsrecorder.domain.mock.CameraMock
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraManager
 import io.reactivex.rxjava3.schedulers.Schedulers
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class CameraManagerTest {
 	companion object {

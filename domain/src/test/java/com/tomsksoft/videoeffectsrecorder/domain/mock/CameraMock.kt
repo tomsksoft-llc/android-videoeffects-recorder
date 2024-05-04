@@ -18,7 +18,7 @@ class CameraMock: Camera {
     override val frame = Observable.create<Any> {
         var counter = 0
         while (!it.isDisposed) {
-            Thread.sleep(100)
+            try { Thread.sleep(100) } catch (e: InterruptedException) { /* don't care */ }
             if (isEnabled)
                 it.onNext("Frame ${++counter}")
         }
