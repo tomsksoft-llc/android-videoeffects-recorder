@@ -32,12 +32,7 @@ android {
 dependencies {
 	implementation(project(mapOf("path" to ":domain")))
 	implementation(libs.androidx.core.ktx)
-	implementation(libs.androidx.appcompat)
-	implementation(libs.android.material)
-
-	testImplementation(libs.junit)
-	androidTestImplementation(libs.androidx.test.ext)
-	androidTestImplementation(libs.androidx.test.espresso)
+	implementation(libs.androidx.lifecycle)
 
 	/* RxJava */
 	implementation(libs.rxjava3.rxjava)

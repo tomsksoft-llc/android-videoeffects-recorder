@@ -1,9 +1,9 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
 import android.view.Surface
-import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
+import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
+import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
 
@@ -28,7 +28,7 @@ interface ICameraViewModel {
 
     /**
      * @param colorGradingSource binary representation of bitmap, required only
-     * for {@link com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection#COLOR_GRADING} mode,
+     * for {@link com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection#COLOR_GRADING} mode,
      * MUST be null if different mode is chosen
      */
     fun setColorCorrectionMode(mode: ColorCorrection, colorGradingSource: InputStream? = null)

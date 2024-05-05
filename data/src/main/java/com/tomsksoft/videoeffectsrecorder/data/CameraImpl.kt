@@ -16,22 +16,21 @@ import com.effectssdk.tsvb.pipeline.DeviceOrientation
 import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
 import com.effectssdk.tsvb.pipeline.OrientationChangeListener
 import com.effectssdk.tsvb.pipeline.PipelineMode
-import com.tomsksoft.videoeffectsrecorder.domain.BackgroundMode
-import com.tomsksoft.videoeffectsrecorder.domain.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.EffectsPipelineCamera
-import com.tomsksoft.videoeffectsrecorder.domain.Camera
-import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
+import com.tomsksoft.videoeffectsrecorder.domain.entity.BackgroundMode
+import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
+import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlin.math.abs
 
-class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
+class CameraImpl(val context: Context): Camera, AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
     companion object {
         private val factory = EffectsSDK.createSDKFactory()
     }
 
     override var lifecycle = LifecycleRegistry(this)
-    override val processedFrame = BehaviorSubject.create<Any>()
+    override val frame = BehaviorSubject.create<Any>()
     override var orientation: Int = 0
     override var flashMode: FlashMode = FlashMode.OFF
         set(value) {
@@ -73,7 +72,8 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
         .getInstance(context).get()
         .bindToLifecycle(
             this,
-            CameraSelector.DEFAULT_BACK_CAMERA)
+            CameraSelector.DEFAULT_BACK_CAMERA
+        )
 
     init {
         pipeline = start(context, com.effectssdk.tsvb.Camera.BACK)
@@ -97,7 +97,7 @@ class EffectsPipelineCameraImpl(val context: Context): EffectsPipelineCamera, Au
     }
 
     override fun onNewFrame(bitmap: Bitmap) =
-        processedFrame.onNext(FrameMapper.toAny(bitmap))
+        frame.onNext(FrameMapper.toAny(bitmap))
 
     override fun close() {
         isEnabled = false

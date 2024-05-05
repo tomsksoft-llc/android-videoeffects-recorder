@@ -1,5 +1,8 @@
-package com.tomsksoft.videoeffectsrecorder.domain
+package com.tomsksoft.videoeffectsrecorder.domain.usecase
 
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
+import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

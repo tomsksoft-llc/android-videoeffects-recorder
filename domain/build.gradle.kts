@@ -31,11 +31,16 @@ android {
 
 dependencies {
 	implementation(libs.androidx.core.ktx)
-	implementation(libs.androidx.appcompat)
-	implementation(libs.android.material)
-	testImplementation(libs.junit)
-	androidTestImplementation(libs.androidx.test.ext)
-	androidTestImplementation(libs.androidx.test.espresso)
+	implementation(libs.androidx.coroutines)
+
+	/* JUnit */
+	testImplementation(libs.junit.api)
+	testRuntimeOnly(libs.junit.engine)
+
 	/* RxJava */
 	implementation(libs.rxjava3.rxjava)
+}
+
+tasks.withType<Test> {
+	useJUnitPlatform()
 }

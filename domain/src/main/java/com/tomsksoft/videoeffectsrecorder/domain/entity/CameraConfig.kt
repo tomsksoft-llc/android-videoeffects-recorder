@@ -1,4 +1,4 @@
-package com.tomsksoft.videoeffectsrecorder.domain
+package com.tomsksoft.videoeffectsrecorder.domain.entity
 
 /**
  * @param background background image for {@link BackgroundMode#Replace Replace Mode}

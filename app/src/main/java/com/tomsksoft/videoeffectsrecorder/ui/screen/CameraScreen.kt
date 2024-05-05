@@ -13,8 +13,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.repeatable
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.annotation.IntDef
@@ -83,8 +81,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
-import com.tomsksoft.videoeffectsrecorder.domain.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.FlashMode
+import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ICameraViewModel
