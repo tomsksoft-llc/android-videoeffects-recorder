@@ -12,12 +12,11 @@ interface ICameraViewModel {
     val cameraConfigData: CameraConfig
 
     fun setSurface(surface: Surface?)
-    fun setFlash(flashMode: FlashMode)
+    fun setFlash()
     fun setPrimaryFilter(filtersMode: PrimaryFiltersMode)
     fun setSecondaryFilters(filtersMode: SecondaryFiltersMode)
     fun setBackground(bitmapStream: InputStream)
     fun removeBackground()
-    fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode)
     fun flipCamera()
     fun captureImage()
     fun startVideoRecording()

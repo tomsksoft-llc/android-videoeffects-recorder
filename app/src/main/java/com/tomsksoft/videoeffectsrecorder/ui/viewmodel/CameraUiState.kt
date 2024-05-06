@@ -9,7 +9,6 @@ import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
  */
 data class CameraUiState(
     val flashMode: FlashMode = FlashMode.OFF,
-    val expandedTopBarMode: ExpandedTopBarMode = ExpandedTopBarMode.DEFAULT,
     val primaryFiltersMode: PrimaryFiltersMode = PrimaryFiltersMode.NONE,
     val smartZoom: Int? = null,
     val beautification: Int? = null,

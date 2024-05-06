@@ -21,12 +21,3 @@ enum class SecondaryFiltersMode(@StringRes val resourceId: Int) {
     SMART_ZOOM(R.string.effects_smart_zoom),
     SHARPNESS(R.string.effects_sharpness)
 }
-
-/**
- * Defines which settings are displayed on the top bar
- */
-enum class ExpandedTopBarMode {
-    FLASH,
-    SETTINGS,
-    DEFAULT
-}

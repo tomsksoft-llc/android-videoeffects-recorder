@@ -13,6 +13,7 @@ import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
+import com.tomsksoft.videoeffectsrecorder.ui.getNextFlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +45,6 @@ class CameraViewModelImpl @Inject constructor(
     private val _cameraUiState : MutableStateFlow<CameraUiState>
             = MutableStateFlow(CameraUiState(
         flashMode = FlashMode.OFF,
-        expandedTopBarMode = ExpandedTopBarMode.DEFAULT,
         primaryFiltersMode = PrimaryFiltersMode.NONE,
         smartZoom = cameraConfig.smartZoom,
         beautification = cameraConfig.beautification,
@@ -58,14 +58,13 @@ class CameraViewModelImpl @Inject constructor(
 
     override fun setSurface(surface: Surface?) = cameraManager.setSurface(surface)
 
-    override fun setFlash(flashMode: FlashMode) {
+    override fun setFlash() {
         _cameraUiState.update{cameraUiState ->
             cameraUiState.copy(
-                flashMode = flashMode
+                flashMode = cameraUiState.flashMode.getNextFlashMode()
             )
         }
-        Log.d("Flash", "mode: ${flashMode}")
-        cameraManager.flashMode = flashMode
+        cameraManager.flashMode = cameraUiState.value.flashMode
     }
 
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) {
@@ -152,20 +151,20 @@ class CameraViewModelImpl @Inject constructor(
         )
     }
 
-    override fun toggleQuickSettingsIndicator(expandedTopBarMode: ExpandedTopBarMode) {
-        _cameraUiState.update { cameraUiState ->
-            cameraUiState.copy(
-                expandedTopBarMode = expandedTopBarMode
-            )
-        }
-    }
-
     override fun flipCamera() {
         cameraManager.direction =
             if (cameraManager.direction == Camera.Direction.BACK)
                 Camera.Direction.FRONT
             else
                 Camera.Direction.BACK
+
+        _cameraUiState.update {cameraUiState ->
+            cameraUiState.copy(
+                pipelineCameraDirection = cameraManager.direction,
+                // no flash available for front camera
+                flashMode = if (cameraManager.direction == Camera.Direction.FRONT) FlashMode.OFF else cameraUiState.flashMode
+            )
+        }
     }
 
     override fun captureImage() {
