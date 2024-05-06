@@ -3,9 +3,11 @@ package com.tomsksoft.videoeffectsrecorder.hilt
 import android.content.Context
 import com.tomsksoft.videoeffectsrecorder.BuildConfig
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
+import com.tomsksoft.videoeffectsrecorder.data.MediaPickerImpl
 import com.tomsksoft.videoeffectsrecorder.data.PhotoPickerImpl
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.MediaPicker
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
 import dagger.Module
@@ -32,4 +34,9 @@ object BoundaryInterfacesModule {
     @Singleton
     fun providePhotoPicker(@ApplicationContext context: Context): PhotoPicker =
         PhotoPickerImpl(context, BuildConfig.RECORDS_DIRECTORY)
+
+    @Provides
+    @Singleton
+    fun provideMediaPicker(@ApplicationContext context: Context): MediaPicker =
+        MediaPickerImpl(context)
 }

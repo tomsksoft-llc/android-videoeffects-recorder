@@ -5,6 +5,8 @@ import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
+import com.tomsksoft.videoeffectsrecorder.domain.GalleryManager
+import com.tomsksoft.videoeffectsrecorder.domain.MediaPicker
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,4 +28,10 @@ object ManagersModule {
         videoRecorder: VideoRecorder,
         photoPicker: PhotoPicker
     ) = CameraRecordManager(cameraManager, videoRecorder, photoPicker)
+
+    @Provides
+    @Singleton
+    fun provideGalleryManager(
+        mediaPicker: MediaPicker
+    ) = GalleryManager(mediaPicker)
 }

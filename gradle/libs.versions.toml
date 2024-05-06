@@ -25,6 +25,7 @@ androidxCamera = "1.3.1"
 junit = "5.8.1"
 hilt = "2.51"
 hiltNavigationCompose = "1.2.0"
+coil = "2.6.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCore" }
@@ -64,6 +65,9 @@ junit-engine = {group = "org.junit.jupiter", name = "junit-jupiter-engine", vers
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
+coil-kt-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil"}
+coil-kt-video = { group = "io.coil-kt", name = "coil-video", version.ref = "coil"}
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
