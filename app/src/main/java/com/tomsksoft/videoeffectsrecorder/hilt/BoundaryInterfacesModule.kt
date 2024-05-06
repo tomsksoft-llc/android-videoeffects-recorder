@@ -7,7 +7,7 @@ import com.tomsksoft.videoeffectsrecorder.data.MediaPickerImpl
 import com.tomsksoft.videoeffectsrecorder.data.PhotoPickerImpl
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
-import com.tomsksoft.videoeffectsrecorder.domain.MediaPicker
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.MediaPicker
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
 import dagger.Module

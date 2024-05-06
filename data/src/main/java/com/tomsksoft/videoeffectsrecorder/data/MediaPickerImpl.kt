@@ -9,7 +9,7 @@ import android.database.MergeCursor
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
-import com.tomsksoft.videoeffectsrecorder.domain.MediaPicker
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.MediaPicker
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 
 class MediaPickerImpl(val context: Context): MediaPicker {

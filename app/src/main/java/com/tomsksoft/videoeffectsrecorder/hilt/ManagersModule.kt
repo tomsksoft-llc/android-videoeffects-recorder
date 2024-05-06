@@ -5,8 +5,8 @@ import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
-import com.tomsksoft.videoeffectsrecorder.domain.GalleryManager
-import com.tomsksoft.videoeffectsrecorder.domain.MediaPicker
+import com.tomsksoft.videoeffectsrecorder.domain.usecase.GalleryManager
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.MediaPicker
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -1,4 +1,4 @@
-package com.tomsksoft.videoeffectsrecorder.domain
+package com.tomsksoft.videoeffectsrecorder.domain.boundary
 
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 
