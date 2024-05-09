@@ -5,13 +5,17 @@ import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import com.tomsksoft.videoeffectsrecorder.domain.mock.CameraMock
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraManager
+import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 
 class CameraManagerTest {
 	companion object {
-		const val FIRST_FRAME_TIMEOUT = 5000 // ms
+		const val FIRST_FRAME_TIMEOUT = 5000L // ms
 	}
 
 	private val camera = CameraMock()
@@ -19,7 +23,6 @@ class CameraManagerTest {
 
 	@Test
 	fun testProperties() {
-		manager.setSurface(null) // it's actually stub
 		val config = CameraConfig()
 		manager.cameraConfig.onNext(config)
 		assertEquals(config, camera.cameraConfig) // check if manager pass by config
@@ -60,20 +63,26 @@ class CameraManagerTest {
 	}
 
 	@Test
+	@Timeout(FIRST_FRAME_TIMEOUT, unit = TimeUnit.MILLISECONDS)
 	fun testFramesEmitting() {
-		manager.apply {
-			isEnabled = true
+		manager.isEnabled = true
 
-			var gotFrame = false
-			val disposable = frameSource.subscribeOn(Schedulers.io()).subscribe { gotFrame = true }
-			val skipAt = System.currentTimeMillis() + FIRST_FRAME_TIMEOUT
+		val lock = ReentrantLock()
+		val gotFrame = lock.newCondition()
 
-			while (!gotFrame && System.currentTimeMillis() < skipAt) Thread.sleep(50)
-			disposable.dispose()
+		Disposable.toAutoCloseable(manager.frameSource
+			.subscribeOn(Schedulers.io())
+			.firstOrError()
+			.subscribe { _ ->
+				lock.lock()
+				gotFrame.signal()
+				lock.unlock()
+			}).use {
+				lock.lock()
+				gotFrame.await()
+				lock.unlock()
+			}
 
-			isEnabled = false
-
-			assert(gotFrame) { "Didn't get any frame for $FIRST_FRAME_TIMEOUT ms" }
-		}
+		manager.isEnabled = false
 	}
 }

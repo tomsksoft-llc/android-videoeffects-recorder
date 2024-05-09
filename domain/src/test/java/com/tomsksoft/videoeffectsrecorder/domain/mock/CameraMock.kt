@@ -1,13 +1,10 @@
 package com.tomsksoft.videoeffectsrecorder.domain.mock
 
-import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.disposables.Disposable
-import io.reactivex.rxjava3.subjects.PublishSubject
-import io.reactivex.rxjava3.subjects.Subject
+import java.util.concurrent.TimeUnit
 
 class CameraMock: Camera {
 
@@ -15,14 +12,14 @@ class CameraMock: Camera {
     override var direction: Camera.Direction = Camera.Direction.BACK
     @Volatile override var isEnabled: Boolean = false
 
-    override val frame = Observable.create<Any> {
-        var counter = 0
-        while (!it.isDisposed) {
-            try { Thread.sleep(100) } catch (e: InterruptedException) { /* don't care */ }
-            if (isEnabled)
-                it.onNext("Frame ${++counter}")
+    override val frame: Observable<Any> = Observable.interval(100, TimeUnit.MILLISECONDS)
+        .flatMap {
+            Observable.create { source ->
+                if (isEnabled)
+                    source.onNext("Frame $it")
+                source.onComplete()
+            }
         }
-    }
 
     override var flashMode: FlashMode = FlashMode.AUTO
         set(value) {
@@ -44,7 +41,6 @@ class CameraMock: Camera {
 
     lateinit var cameraConfig: CameraConfig // for test purposes
 
-    override fun setSurface(surface: Surface?) = Unit
     override fun configure(cameraConfig: CameraConfig) {
         this.cameraConfig = cameraConfig
     }
