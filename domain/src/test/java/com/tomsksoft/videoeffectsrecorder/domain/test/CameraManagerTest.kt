@@ -23,7 +23,6 @@ class CameraManagerTest {
 
 	@Test
 	fun testProperties() {
-		manager.setSurface(null) // it's actually stub
 		val config = CameraConfig()
 		manager.cameraConfig.onNext(config)
 		assertEquals(config, camera.cameraConfig) // check if manager pass by config

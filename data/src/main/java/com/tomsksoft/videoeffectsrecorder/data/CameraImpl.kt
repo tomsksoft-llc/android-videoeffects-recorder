@@ -24,7 +24,9 @@ import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import kotlin.math.abs
 
-class CameraImpl(val context: Context): Camera, AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
+class CameraImpl(
+    private val context: Context
+): AndroidCamera, AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
     companion object {
         private val factory = EffectsSDK.createSDKFactory()
     }

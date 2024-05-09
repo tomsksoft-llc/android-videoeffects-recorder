@@ -1,6 +1,5 @@
 package com.tomsksoft.videoeffectsrecorder.domain.boundary
 
-import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.core.Observable
@@ -13,7 +12,6 @@ interface Camera {
     var isFlashEnabled: Boolean
     val frame: Observable<Any>
 
-    fun setSurface(surface: Surface?)
     fun configure(cameraConfig: CameraConfig)
 
     enum class Direction {

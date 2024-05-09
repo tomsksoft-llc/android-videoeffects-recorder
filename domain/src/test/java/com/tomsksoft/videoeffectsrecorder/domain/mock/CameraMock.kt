@@ -1,13 +1,9 @@
 package com.tomsksoft.videoeffectsrecorder.domain.mock
 
-import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.disposables.Disposable
-import io.reactivex.rxjava3.subjects.PublishSubject
-import io.reactivex.rxjava3.subjects.Subject
 import java.util.concurrent.TimeUnit
 
 class CameraMock: Camera {
@@ -45,7 +41,6 @@ class CameraMock: Camera {
 
     lateinit var cameraConfig: CameraConfig // for test purposes
 
-    override fun setSurface(surface: Surface?) = Unit
     override fun configure(cameraConfig: CameraConfig) {
         this.cameraConfig = cameraConfig
     }

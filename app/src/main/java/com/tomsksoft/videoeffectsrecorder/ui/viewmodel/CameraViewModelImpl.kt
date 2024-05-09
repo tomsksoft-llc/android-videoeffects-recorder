@@ -1,11 +1,11 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
-import android.app.Application
 import android.graphics.BitmapFactory
 import android.util.Log
 import android.view.Surface
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tomsksoft.videoeffectsrecorder.data.AndroidCamera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.BackgroundMode
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
@@ -28,9 +28,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CameraViewModelImpl @Inject constructor(
     private val cameraRecordManager: CameraRecordManager,
-    private val cameraManager: CameraManager,
-    private val app: Application
-): AndroidViewModel(app), ICameraViewModel {
+    private val cameraManager: CameraManager
+): ViewModel(), ICameraViewModel {
     companion object {
         private const val TAG = "Camera View Model"
     }
@@ -56,7 +55,8 @@ class CameraViewModelImpl @Inject constructor(
     ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
-    override fun setSurface(surface: Surface?) = cameraManager.setSurface(surface)
+    override fun setSurface(surface: Surface?) =
+        (cameraManager.camera as AndroidCamera).setSurface(surface)
 
     override fun setFlash() {
         _cameraUiState.update{cameraUiState ->
