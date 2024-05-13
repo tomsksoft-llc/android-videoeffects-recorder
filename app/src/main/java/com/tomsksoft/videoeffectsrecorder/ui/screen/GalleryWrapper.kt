@@ -1,7 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import androidx.annotation.DrawableRes
-import androidx.annotation.IdRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.tomsksoft.videoeffectsrecorder.R
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.GalleryScreen
+import com.tomsksoft.videoeffectsrecorder.ui.entity.GalleryScreen
 
 @Preview
 @Composable

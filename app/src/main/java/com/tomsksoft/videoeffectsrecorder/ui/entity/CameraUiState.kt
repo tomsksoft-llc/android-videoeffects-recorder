@@ -1,4 +1,4 @@
-package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
+package com.tomsksoft.videoeffectsrecorder.ui.entity
 
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection

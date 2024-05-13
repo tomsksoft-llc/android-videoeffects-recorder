@@ -3,11 +3,13 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
+import com.tomsksoft.videoeffectsrecorder.ui.entity.CameraUiState
+import com.tomsksoft.videoeffectsrecorder.ui.entity.PrimaryFiltersMode
+import com.tomsksoft.videoeffectsrecorder.ui.entity.SecondaryFiltersMode
 import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
 
-interface ICameraViewModel {
+interface CameraViewModel {
     val cameraUiState: StateFlow<CameraUiState>
     val cameraConfigData: CameraConfig
 

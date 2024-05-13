@@ -85,12 +85,12 @@ import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ICameraViewModel
+import com.tomsksoft.videoeffectsrecorder.ui.entity.CameraUiState
+import com.tomsksoft.videoeffectsrecorder.ui.entity.PrimaryFiltersMode
+import com.tomsksoft.videoeffectsrecorder.ui.entity.SecondaryFiltersMode
+import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelImpl
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelStub
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
 import kotlinx.coroutines.launch
 
 private const val REQUEST_PICK_PHOTO_BACKGROUND = 1
@@ -134,7 +134,7 @@ fun CameraPreview() {
 }
 
 @Composable
-fun CameraUi(viewModel: ICameraViewModel, onGalleryClick: () -> Unit) {
+fun CameraUi(viewModel: CameraViewModel, onGalleryClick: () -> Unit) {
 	val context = LocalContext.current
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
@@ -263,13 +263,13 @@ fun CameraUi(viewModel: ICameraViewModel, onGalleryClick: () -> Unit) {
 
 @Composable
 fun PrimaryEffectsOptions(
-	cameraUiState: CameraUiState,
-	onPickPhotoClick: () -> Unit,
-	onRemoveClick: () -> Unit,
-	onBlurSliderChange: (Float) -> Unit,
-	onColorCorrectionSliderChange: (Float) -> Unit,
-	onColorCorrectionModeChange: (ColorCorrection) -> Unit,
-	snackbarHostState: SnackbarHostState
+    cameraUiState: CameraUiState,
+    onPickPhotoClick: () -> Unit,
+    onRemoveClick: () -> Unit,
+    onBlurSliderChange: (Float) -> Unit,
+    onColorCorrectionSliderChange: (Float) -> Unit,
+    onColorCorrectionModeChange: (ColorCorrection) -> Unit,
+    snackbarHostState: SnackbarHostState
 ) {
 	val scope = rememberCoroutineScope()
 
@@ -380,11 +380,11 @@ fun PrimaryEffectsOptions(
 
 @Composable
 fun SecondaryEffectsOptions(
-	cameraUiState: CameraUiState,
-	onBeautifySliderChange: (Float) -> Unit,
-	onSmartZoomSliderChange: (Float) -> Unit,
-	onSharpnessSliderChange: (Float) -> Unit,
-	modifier: Modifier
+    cameraUiState: CameraUiState,
+    onBeautifySliderChange: (Float) -> Unit,
+    onSmartZoomSliderChange: (Float) -> Unit,
+    onSharpnessSliderChange: (Float) -> Unit,
+    modifier: Modifier
 ) {
 	Column(
 		modifier = modifier
@@ -613,12 +613,12 @@ private fun TopBar(
 
 @Composable
 private fun BottomBar(
-	cameraUiState: CameraUiState,
-	onFlipCameraClick: () -> Unit,
-	onCaptureClick: () -> Unit,
-	onLongPress: () -> Unit,
-	onRelease: () -> Unit,
-	onFilterSettingClick: (PrimaryFiltersMode) -> Unit
+    cameraUiState: CameraUiState,
+    onFlipCameraClick: () -> Unit,
+    onCaptureClick: () -> Unit,
+    onLongPress: () -> Unit,
+    onRelease: () -> Unit,
+    onFilterSettingClick: (PrimaryFiltersMode) -> Unit
 ) {
 	Column {
 		FiltersCarousel(

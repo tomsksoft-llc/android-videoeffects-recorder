@@ -1,4 +1,4 @@
-package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
+package com.tomsksoft.videoeffectsrecorder.ui.entity
 
 import androidx.annotation.StringRes
 import com.tomsksoft.videoeffectsrecorder.R
@@ -11,13 +11,4 @@ enum class PrimaryFiltersMode(@StringRes val resourceId: Int) {
     REPLACE_BACK(R.string.effects_replace_background),
     COLOR_CORRECTION(R.string.effects_color_correction),
     NONE(R.string.effects_none)
-}
-
-/**
- * Defines current filter mode that can be launched together and over primary filters
- */
-enum class SecondaryFiltersMode(@StringRes val resourceId: Int) {
-    BEAUTIFY(R.string.effects_beautify),
-    SMART_ZOOM(R.string.effects_smart_zoom),
-    SHARPNESS(R.string.effects_sharpness)
 }
