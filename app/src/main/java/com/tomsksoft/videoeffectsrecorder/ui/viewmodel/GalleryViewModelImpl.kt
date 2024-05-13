@@ -13,7 +13,8 @@ import javax.inject.Inject
 class GalleryViewModelImpl @Inject constructor(
     private val galleryManager: GalleryManager
 ): ViewModel(), GalleryViewModel {
-    override val mediaList: Observable<List<Uri>> = galleryManager.mediaList
+    @Suppress("UNCHECKED_CAST")
+    override val mediaList: Observable<List<Uri>> = galleryManager.mediaList.map { it as List<Uri> }
     override fun loadMediaList() {
         viewModelScope.launch {
             galleryManager.loadMedia()
