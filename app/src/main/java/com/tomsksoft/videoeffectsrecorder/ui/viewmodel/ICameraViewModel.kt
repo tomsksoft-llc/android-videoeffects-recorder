@@ -3,16 +3,15 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
 
 interface ICameraViewModel {
     val cameraUiState: StateFlow<CameraUiState>
-    val cameraConfigData: CameraConfig
+    val cameraConfig: CameraConfig
 
     fun setSurface(surface: Surface?)
-    fun setFlash()
+    fun changeFlashMode()
     fun setPrimaryFilter(filtersMode: PrimaryFiltersMode)
     fun setSecondaryFilters(filtersMode: SecondaryFiltersMode)
     fun setBackground(bitmapStream: InputStream)

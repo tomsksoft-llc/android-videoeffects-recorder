@@ -20,55 +20,37 @@ import com.tomsksoft.videoeffectsrecorder.domain.entity.BackgroundMode
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
-import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.subjects.BehaviorSubject
-import kotlin.math.abs
 
 class CameraImpl(
     private val context: Context
 ): AndroidCamera, AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
     companion object {
+        private const val TAG = "Camera"
         private val factory = EffectsSDK.createSDKFactory()
     }
 
     override var lifecycle = LifecycleRegistry(this)
     override val frame = BehaviorSubject.create<Any>()
     override var orientation: Int = 0
-    override var flashMode: FlashMode = FlashMode.OFF
-        set(value) {
-            when (value) {
-                FlashMode.ON -> cam.cameraControl.enableTorch(true)
-                FlashMode.OFF -> cam.cameraControl.enableTorch(false)
-                FlashMode.AUTO -> cam.cameraControl.enableTorch(false)
-            }
-            field = value
-        }
-    override var direction: Camera.Direction = Camera.Direction.BACK
-        set(value) {
-            field = value
-            pipeline.release()
-            isEnabled = false
-            pipeline = start(
-                context,
-                when (field) {
-                    Camera.Direction.BACK -> com.effectssdk.tsvb.Camera.BACK
-                    Camera.Direction.FRONT -> com.effectssdk.tsvb.Camera.FRONT
-                }
-            )
-        }
-    override var isFlashEnabled: Boolean = false
-        set(value) {
-            when (flashMode) {
-                FlashMode.ON -> return
-                FlashMode.OFF -> return
-                FlashMode.AUTO -> {
-                    field = value
-                    cam.cameraControl.enableTorch(value)
-                }
-            }
-        }
     override var isEnabled: Boolean = false
-    private var pipeline: CameraPipeline
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value)
+                createPipeline()
+            else
+                releasePipeline()
+        }
+
+    /**
+     * Cached direction for {@link createPipeline}
+     */
+    private var _direction = Camera.Direction.BACK
+    /**
+     * Updates only by {@link releasePipeline} and {@link createPipeline}
+     */
+    private var pipeline: CameraPipeline? = null
     private var surface: Surface? = null
     private val cam = ProcessCameraProvider
         .getInstance(context).get()
@@ -78,15 +60,23 @@ class CameraImpl(
         )
 
     init {
-        pipeline = start(context, com.effectssdk.tsvb.Camera.BACK)
         lifecycle.currentState = Lifecycle.State.CREATED
     }
 
-    private fun start(context: Context, cameraDirection: com.effectssdk.tsvb.Camera): CameraPipeline {
+    /**
+     * Updates pipeline property with new instance
+     * @see pipeline
+     */
+    private fun createPipeline() {
+        Log.d(TAG, "Create pipeline")
+
         val pipeline = factory.createCameraPipeline(
             context,
             fpsListener = { Log.d("FPS", it.toString()) },
-            camera = cameraDirection
+            camera = when (_direction) {
+                Camera.Direction.BACK -> com.effectssdk.tsvb.Camera.BACK
+                Camera.Direction.FRONT -> com.effectssdk.tsvb.Camera.FRONT
+            }
         )
 
         pipeline.setSegmentationGap(1)
@@ -94,8 +84,13 @@ class CameraImpl(
         pipeline.setOrientationChangeListener(OrientationChangeListenerImpl())
         pipeline.setOutputSurface(surface)
         pipeline.startPipeline()
-        isEnabled = true
-        return pipeline
+        this.pipeline = pipeline
+    }
+
+    private fun releasePipeline() {
+        Log.d(TAG, "Release pipeline")
+        pipeline?.release()
+        pipeline = null
     }
 
     override fun onNewFrame(bitmap: Bitmap) =
@@ -103,16 +98,33 @@ class CameraImpl(
 
     override fun close() {
         isEnabled = false
-        pipeline.release()
+        lifecycle.currentState = Lifecycle.State.DESTROYED // unbind CameraX
+        releasePipeline()
     }
 
     override fun setSurface(surface: Surface?) {
         this.surface = surface
-        pipeline.setOutputSurface(this.surface)
+        pipeline?.setOutputSurface(this.surface)
     }
 
-    override fun configure(cameraConfig: CameraConfig): Unit =
-        pipeline.run {
+    override fun setFlashEnabled(enabled: Boolean) {
+        cam.cameraControl.enableTorch(enabled)
+    }
+
+    override fun setDirection(direction: Camera.Direction) {
+        if (direction == this._direction)
+            return
+
+        this._direction = direction
+
+        if (isEnabled) { // recreate pipeline for relevant direction
+            releasePipeline()
+            createPipeline()
+        }
+    }
+
+    override fun configure(cameraConfig: CameraConfig): Unit {
+        pipeline?.run {
             /* Background Mode */
             when (cameraConfig.backgroundMode) {
                 BackgroundMode.Regular -> setMode(PipelineMode.NO_EFFECT)
@@ -148,6 +160,8 @@ class CameraImpl(
             /* Sharpness */
             setSharpeningStrength(cameraConfig.sharpnessPower ?: 0f)
         }
+    }
+
     inner class OrientationChangeListenerImpl: OrientationChangeListener {
         override fun onOrientationChanged(deviceOrientation: DeviceOrientation, rotation: Int) {
             orientation = 360 - rotation // rotation in this callback is counted counter-clockwise, but clockwise degrees are required for android.media.MediaRecorder

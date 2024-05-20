@@ -34,23 +34,33 @@ class CameraViewModelImpl @Inject constructor(
         private const val TAG = "Camera View Model"
     }
 
-    private var cameraConfig: CameraConfig
+    private var _cameraConfig: CameraConfig
         get() = cameraManager.cameraConfig.value!!
         set(value) = cameraManager.cameraConfig.onNext(value)
 
-    override val cameraConfigData: CameraConfig
-        get() = cameraConfig
+    override val cameraConfig: CameraConfig
+        get() = _cameraConfig
 
-    private val _cameraUiState : MutableStateFlow<CameraUiState>
-            = MutableStateFlow(CameraUiState(
-        flashMode = FlashMode.OFF,
-        primaryFiltersMode = PrimaryFiltersMode.NONE,
+    private val _cameraUiState : MutableStateFlow<CameraUiState> = MutableStateFlow(CameraUiState(
+        flashMode = cameraManager.flashMode,
+        primaryFiltersMode =
+            if (cameraConfig.colorCorrection != ColorCorrection.NO_FILTER)
+                PrimaryFiltersMode.COLOR_CORRECTION
+            else
+                when(cameraConfig.backgroundMode) {
+                    BackgroundMode.Regular ->
+                        PrimaryFiltersMode.NONE
+                    BackgroundMode.Blur ->
+                        PrimaryFiltersMode.BLUR
+                    BackgroundMode.Remove, BackgroundMode.Replace ->
+                        PrimaryFiltersMode.REPLACE_BACK
+            },
         smartZoom = cameraConfig.smartZoom,
         beautification = cameraConfig.beautification,
         isVideoRecording = cameraRecordManager.isRecording,
         isCameraInitialized = true, // TODO [tva] check if EffectsSDK is initialized
-        pipelineCameraDirection = Camera.Direction.BACK,
-        colorCorrectionMode = ColorCorrection.NO_FILTER,
+        pipelineCameraDirection = cameraManager.direction,
+        colorCorrectionMode = cameraConfig.colorCorrection,
         colorCorrectionPower = cameraConfig.colorCorrectionPower
     ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
@@ -58,13 +68,17 @@ class CameraViewModelImpl @Inject constructor(
     override fun setSurface(surface: Surface?) =
         (cameraManager.camera as AndroidCamera).setSurface(surface)
 
-    override fun setFlash() {
-        _cameraUiState.update{cameraUiState ->
+    override fun changeFlashMode() {
+        setFlashMode(cameraUiState.value.flashMode.getNextFlashMode())
+    }
+
+    private fun setFlashMode(mode: FlashMode) {
+        _cameraUiState.update{ cameraUiState ->
             cameraUiState.copy(
-                flashMode = cameraUiState.flashMode.getNextFlashMode()
+                flashMode = mode
             )
         }
-        cameraManager.flashMode = cameraUiState.value.flashMode
+        cameraManager.flashMode = mode
     }
 
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) {
@@ -74,20 +88,20 @@ class CameraViewModelImpl @Inject constructor(
             )
         }
         when (filtersMode) {
-            PrimaryFiltersMode.BLUR -> cameraConfig = cameraConfig.copy(
+            PrimaryFiltersMode.BLUR -> _cameraConfig = _cameraConfig.copy(
                 backgroundMode = BackgroundMode.Blur
             )
-            PrimaryFiltersMode.REPLACE_BACK -> cameraConfig = cameraConfig.copy(
+            PrimaryFiltersMode.REPLACE_BACK -> _cameraConfig = _cameraConfig.copy(
                 backgroundMode =
-                    if (cameraConfig.background == null)
+                    if (_cameraConfig.background == null)
                         BackgroundMode.Remove
                     else BackgroundMode.Replace
             )
-            PrimaryFiltersMode.COLOR_CORRECTION -> cameraConfig = cameraConfig.copy(
+            PrimaryFiltersMode.COLOR_CORRECTION -> _cameraConfig = _cameraConfig.copy(
                 backgroundMode = BackgroundMode.Regular,
                 colorCorrection = ColorCorrection.NO_FILTER
             )
-            PrimaryFiltersMode.NONE -> cameraConfig = cameraConfig.copy(
+            PrimaryFiltersMode.NONE -> _cameraConfig = _cameraConfig.copy(
                 backgroundMode = BackgroundMode.Regular,
                 colorCorrection = ColorCorrection.NO_FILTER
             )
@@ -116,15 +130,15 @@ class CameraViewModelImpl @Inject constructor(
                 }
             }
         }
-        cameraConfig = when(filtersMode) {
-            SecondaryFiltersMode.BEAUTIFY -> cameraConfig.copy(
-                beautification = cameraConfig.beautification
+        _cameraConfig = when(filtersMode) {
+            SecondaryFiltersMode.BEAUTIFY -> _cameraConfig.copy(
+                beautification = _cameraConfig.beautification
             )
-            SecondaryFiltersMode.SMART_ZOOM -> cameraConfig.copy(
-                smartZoom = cameraConfig.smartZoom
+            SecondaryFiltersMode.SMART_ZOOM -> _cameraConfig.copy(
+                smartZoom = _cameraConfig.smartZoom
             )
-            SecondaryFiltersMode.SHARPNESS -> cameraConfig.copy(
-                sharpnessPower = cameraConfig.sharpnessPower
+            SecondaryFiltersMode.SHARPNESS -> _cameraConfig.copy(
+                sharpnessPower = _cameraConfig.sharpnessPower
             )
         }
     }
@@ -136,7 +150,7 @@ class CameraViewModelImpl @Inject constructor(
             }
             if (_cameraUiState.value.primaryFiltersMode == PrimaryFiltersMode.REPLACE_BACK)
                 withContext(Dispatchers.Main) {
-                    cameraConfig = cameraConfig.copy(
+                    _cameraConfig = _cameraConfig.copy(
                         background = background,
                         backgroundMode = BackgroundMode.Replace
                     )
@@ -145,13 +159,16 @@ class CameraViewModelImpl @Inject constructor(
     }
 
     override fun removeBackground() {
-        cameraConfig = cameraConfig.copy(
+        _cameraConfig = _cameraConfig.copy(
             background = null,
             backgroundMode = BackgroundMode.Remove
         )
     }
 
     override fun flipCamera() {
+        if (cameraManager.direction == Camera.Direction.FRONT)
+            setFlashMode(FlashMode.OFF)
+
         cameraManager.direction =
             if (cameraManager.direction == Camera.Direction.BACK)
                 Camera.Direction.FRONT
@@ -160,9 +177,7 @@ class CameraViewModelImpl @Inject constructor(
 
         _cameraUiState.update {cameraUiState ->
             cameraUiState.copy(
-                pipelineCameraDirection = cameraManager.direction,
-                // no flash available for front camera
-                flashMode = if (cameraManager.direction == Camera.Direction.FRONT) FlashMode.OFF else cameraUiState.flashMode
+                pipelineCameraDirection = cameraManager.direction
             )
         }
     }
@@ -200,7 +215,7 @@ class CameraViewModelImpl @Inject constructor(
                 blur = value
             )
         }
-        cameraConfig = cameraConfig.copy(blurPower = value)
+        _cameraConfig = _cameraConfig.copy(blurPower = value)
     }
 
     override fun setZoomPower(value: Float) {
@@ -210,7 +225,7 @@ class CameraViewModelImpl @Inject constructor(
                 smartZoom = percent
             )
         }
-        cameraConfig = cameraConfig.copy(
+        _cameraConfig = _cameraConfig.copy(
             smartZoom = percent
         )
     }
@@ -222,7 +237,7 @@ class CameraViewModelImpl @Inject constructor(
                 beautification = percent
             )
         }
-        cameraConfig = cameraConfig.copy(beautification = percent)
+        _cameraConfig = _cameraConfig.copy(beautification = percent)
     }
 
     override fun setColorCorrectionMode(mode: ColorCorrection, colorGradingSource: InputStream?) {
@@ -233,14 +248,14 @@ class CameraViewModelImpl @Inject constructor(
             )
         }
         if (colorGradingSource == null)
-            cameraConfig = cameraConfig.copy(colorCorrection = mode)
+            _cameraConfig = _cameraConfig.copy(colorCorrection = mode)
         else viewModelScope.launch {
             val bitmap = withContext(Dispatchers.IO) {
                 colorGradingSource.use(BitmapFactory::decodeStream)
             }
             if (_cameraUiState.value.colorCorrectionMode == ColorCorrection.COLOR_GRADING)
                 withContext(Dispatchers.Main) {
-                    cameraConfig = cameraConfig.copy(
+                    _cameraConfig = _cameraConfig.copy(
                         colorCorrection = ColorCorrection.COLOR_GRADING,
                         colorGradingSource = bitmap
                     )
@@ -254,7 +269,7 @@ class CameraViewModelImpl @Inject constructor(
                 colorCorrectionPower = value
             )
         }
-        cameraConfig = cameraConfig.copy(colorCorrectionPower = value)
+        _cameraConfig = _cameraConfig.copy(colorCorrectionPower = value)
     }
 
     override fun setSharpnessPower(value: Float) {
@@ -263,6 +278,6 @@ class CameraViewModelImpl @Inject constructor(
                 sharpnessPower = value
             )
         }
-        cameraConfig = cameraConfig.copy(sharpnessPower = value)
+        _cameraConfig = _cameraConfig.copy(sharpnessPower = value)
     }
 }

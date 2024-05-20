@@ -10,10 +10,10 @@ import java.io.InputStream
 
 object CameraViewModelStub: ICameraViewModel {
     override val cameraUiState: StateFlow<CameraUiState> = MutableStateFlow(CameraUiState())
-    override val cameraConfigData: CameraConfig = CameraConfig()
+    override val cameraConfig: CameraConfig = CameraConfig()
 
     override fun setSurface(surface: Surface?) = throw unimplementedError()
-    override fun setFlash() = throw unimplementedError()
+    override fun changeFlashMode() = throw unimplementedError()
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) = throw unimplementedError()
     override fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) = throw unimplementedError()
     override fun setBackground(bitmapStream: InputStream) = throw unimplementedError()

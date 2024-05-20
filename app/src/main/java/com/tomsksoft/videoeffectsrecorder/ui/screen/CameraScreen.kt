@@ -197,7 +197,7 @@ fun CameraUi(viewModel: ICameraViewModel, onGalleryClick: () -> Unit) {
 				TopBar(
 					cameraUiState,
 					snackbarHostState,
-					viewModel::setFlash,
+					viewModel::changeFlashMode,
 					viewModel::setSecondaryFilters,
 					onGalleryClick
 				)

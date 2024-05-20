@@ -28,7 +28,7 @@ object BoundaryInterfacesModule {
     @Provides
     @Singleton
     fun provideCamera(@ApplicationContext context: Context): Camera =
-        CameraImpl(context)
+        CameraImpl(context).apply { isEnabled = true }
 
     @Provides
     @Singleton

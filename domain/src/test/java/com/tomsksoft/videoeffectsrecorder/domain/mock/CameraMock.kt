@@ -9,9 +9,6 @@ import java.util.concurrent.TimeUnit
 class CameraMock: Camera {
 
     override val orientation: Int = 0
-    override var direction: Camera.Direction = Camera.Direction.BACK
-    @Volatile override var isEnabled: Boolean = false
-
     override val frame: Observable<Any> = Observable.interval(100, TimeUnit.MILLISECONDS)
         .flatMap {
             Observable.create { source ->
@@ -20,28 +17,22 @@ class CameraMock: Camera {
                 source.onComplete()
             }
         }
+    @Volatile override var isEnabled: Boolean = false
 
-    override var flashMode: FlashMode = FlashMode.AUTO
-        set(value) {
-            field = value
-            if (value == FlashMode.AUTO)
-                isFlashEnabled = false
-        }
-
-    override var isFlashEnabled: Boolean = false
-        get() = when (flashMode) {
-            FlashMode.AUTO -> field
-            FlashMode.ON -> true
-            FlashMode.OFF -> false
-        }
-        set(value) {
-            if (flashMode == FlashMode.AUTO)
-                field = value
-        }
-
-    lateinit var cameraConfig: CameraConfig // for test purposes
+    // for test purposes
+    var direction: Camera.Direction = Camera.Direction.BACK
+    var isFlashEnabled: Boolean = false
+    lateinit var cameraConfig: CameraConfig
 
     override fun configure(cameraConfig: CameraConfig) {
         this.cameraConfig = cameraConfig
+    }
+
+    override fun setFlashEnabled(enabled: Boolean) {
+        isFlashEnabled = true
+    }
+
+    override fun setDirection(direction: Camera.Direction) {
+        this.direction = direction
     }
 }
