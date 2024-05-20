@@ -78,6 +78,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
@@ -102,6 +104,7 @@ private annotation class PickPhotoCode
 @Composable
 fun CameraScreen(onGalleryClick: () -> Unit) {
 	val context = LocalContext.current
+	val viewModel = hiltViewModel<CameraViewModelImpl>()
 
 	// permissions
 	val permissionsLauncher = rememberMultiplePermissionsState(
@@ -123,8 +126,12 @@ fun CameraScreen(onGalleryClick: () -> Unit) {
 		}
 	}
 
+	// use camera while screen is visible
+	LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.isCameraEnabled = true }
+	LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.isCameraEnabled = false }
+
 	// ui
-	CameraUi(hiltViewModel<CameraViewModelImpl>(), onGalleryClick)
+	CameraUi(viewModel, onGalleryClick)
 }
 
 @Preview

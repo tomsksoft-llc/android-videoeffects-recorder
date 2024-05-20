@@ -13,6 +13,11 @@ interface CameraViewModel {
     val cameraUiState: StateFlow<CameraUiState>
     val cameraConfig: CameraConfig
 
+    /**
+     * Camera MUST be stopped while screen is not shown
+     */
+    val isCameraEnabled: Boolean
+
     fun setSurface(surface: Surface?)
     fun changeFlashMode()
     fun setPrimaryFilter(filtersMode: PrimaryFiltersMode)

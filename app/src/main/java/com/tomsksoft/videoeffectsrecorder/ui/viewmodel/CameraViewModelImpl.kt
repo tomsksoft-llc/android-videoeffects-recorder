@@ -44,8 +44,7 @@ class CameraViewModelImpl @Inject constructor(
     override val cameraConfig: CameraConfig
         get() = _cameraConfig
 
-    private val _cameraUiState : MutableStateFlow<CameraUiState> = MutableStateFlow(
-        CameraUiState(
+    private val _cameraUiState : MutableStateFlow<CameraUiState> = MutableStateFlow(CameraUiState(
         flashMode = cameraManager.flashMode,
         primaryFiltersMode =
             if (cameraConfig.colorCorrection != ColorCorrection.NO_FILTER)
@@ -66,9 +65,9 @@ class CameraViewModelImpl @Inject constructor(
         pipelineCameraDirection = cameraManager.direction,
         colorCorrectionMode = cameraConfig.colorCorrection,
         colorCorrectionPower = cameraConfig.colorCorrectionPower
-    )
-    )
+    ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
+    override var isCameraEnabled by cameraManager.camera::isEnabled
 
     override fun setSurface(surface: Surface?) =
         (cameraManager.camera as AndroidCamera).setSurface(surface)
