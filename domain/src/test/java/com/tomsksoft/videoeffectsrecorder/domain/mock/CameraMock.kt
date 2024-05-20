@@ -2,7 +2,6 @@ package com.tomsksoft.videoeffectsrecorder.domain.mock
 
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
-import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.core.Observable
 import java.util.concurrent.TimeUnit
 
@@ -20,19 +19,19 @@ class CameraMock: Camera {
     @Volatile override var isEnabled: Boolean = false
 
     // for test purposes
-    var direction: Camera.Direction = Camera.Direction.BACK
-    var isFlashEnabled: Boolean = false
-    lateinit var cameraConfig: CameraConfig
+    var _direction: Camera.Direction = Camera.Direction.BACK
+    var _isFlashEnabled: Boolean = false
+    lateinit var _cameraConfig: CameraConfig
 
     override fun configure(cameraConfig: CameraConfig) {
-        this.cameraConfig = cameraConfig
+        this._cameraConfig = cameraConfig
     }
 
     override fun setFlashEnabled(enabled: Boolean) {
-        isFlashEnabled = true
+        _isFlashEnabled = true
     }
 
     override fun setDirection(direction: Camera.Direction) {
-        this.direction = direction
+        this._direction = direction
     }
 }
