@@ -1,18 +1,17 @@
 package com.tomsksoft.videoeffectsrecorder.domain.usecase
 
-import android.net.Uri
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.MediaPicker
 import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.schedulers.Schedulers
+import io.reactivex.rxjava3.subjects.BehaviorSubject
 
 class GalleryManager(
     private val mediaPicker: MediaPicker
 ) {
-    val mediaList: Observable<List<Uri>> = mediaPicker.mediaList
-        .map{it as List<Uri>}
-        .observeOn(Schedulers.io())
+    private val _mediaList: BehaviorSubject<List<String>> = BehaviorSubject.create()
+    val mediaList: Observable<List<String>>
+        get() = _mediaList
 
     fun loadMedia() {
-        mediaPicker.loadVideos()
+        _mediaList.onNext(mediaPicker.loadVideos())
     }
 }

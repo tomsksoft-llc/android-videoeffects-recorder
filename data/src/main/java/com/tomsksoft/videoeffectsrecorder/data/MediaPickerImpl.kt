@@ -10,19 +10,16 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.MediaPicker
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 
 class MediaPickerImpl(val context: Context): MediaPicker {
     companion object {
         private const val TAG = "MediaPickerImpl"
     }
 
-    override val mediaList: BehaviorSubject<List<Any>> = BehaviorSubject.create()
-
     private val contentResolver: ContentResolver
         get() = context.contentResolver
 
-    /*Content resolver query parameters*/
+    /* Content resolver query parameters */
     private val projection = arrayOf(
         MediaStore.MediaColumns._ID,
         MediaStore.MediaColumns.RELATIVE_PATH,
@@ -38,7 +35,7 @@ class MediaPickerImpl(val context: Context): MediaPicker {
 
     private var cursor: Cursor? = null
 
-    override fun loadVideos() {
+    override fun loadVideos(): List<String> {
         cursor = MergeCursor(
             arrayOf(
                 contentResolver.query(
@@ -58,7 +55,7 @@ class MediaPickerImpl(val context: Context): MediaPicker {
             )
         )
         Log.d(TAG, "Query was called with ${cursor?.count} rows retrieved")
-        mediaList.onNext(loadUriList(cursor))
+        return loadUriList(cursor).map(Uri::toString)
     }
 
     @SuppressLint("Range")  // TODO [fmv] look into it later
@@ -77,7 +74,7 @@ class MediaPickerImpl(val context: Context): MediaPicker {
                     cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID)).toLong()
                 )
             uriList.add(videoUri)
-            Log.d(TAG, "${videoUri}")
+            Log.d(TAG, "$videoUri")
         }
         return uriList
     }

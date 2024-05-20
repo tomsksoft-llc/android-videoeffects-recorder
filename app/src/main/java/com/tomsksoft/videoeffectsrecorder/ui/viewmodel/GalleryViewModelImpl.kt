@@ -14,6 +14,8 @@ class GalleryViewModelImpl @Inject constructor(
     private val galleryManager: GalleryManager
 ): ViewModel(), GalleryViewModel {
     override val mediaList: Observable<List<Uri>> = galleryManager.mediaList
+        .map { it.map(Uri::parse) }
+
     override fun loadMediaList() {
         viewModelScope.launch {
             galleryManager.loadMedia()

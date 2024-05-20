@@ -164,7 +164,10 @@ class CameraImpl(
 
     inner class OrientationChangeListenerImpl: OrientationChangeListener {
         override fun onOrientationChanged(deviceOrientation: DeviceOrientation, rotation: Int) {
-            orientation = 360 - rotation // rotation in this callback is counted counter-clockwise, but clockwise degrees are required for android.media.MediaRecorder
+            // rotation in this callback is counted counter-clockwise,
+            // but clockwise degrees are required for android.media.MediaRecorder
+            orientation = (360 - rotation) % 360
+            Log.d(TAG, "Orientation changed: $orientation")
         }
     }
 }
