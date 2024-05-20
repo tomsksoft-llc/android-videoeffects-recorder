@@ -13,6 +13,9 @@ import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
+import com.tomsksoft.videoeffectsrecorder.ui.entity.CameraUiState
+import com.tomsksoft.videoeffectsrecorder.ui.entity.PrimaryFiltersMode
+import com.tomsksoft.videoeffectsrecorder.ui.entity.SecondaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.getNextFlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +32,7 @@ import javax.inject.Inject
 class CameraViewModelImpl @Inject constructor(
     private val cameraRecordManager: CameraRecordManager,
     private val cameraManager: CameraManager
-): ViewModel(), ICameraViewModel {
+): ViewModel(), CameraViewModel {
     companion object {
         private const val TAG = "Camera View Model"
     }
@@ -41,7 +44,8 @@ class CameraViewModelImpl @Inject constructor(
     override val cameraConfig: CameraConfig
         get() = _cameraConfig
 
-    private val _cameraUiState : MutableStateFlow<CameraUiState> = MutableStateFlow(CameraUiState(
+    private val _cameraUiState : MutableStateFlow<CameraUiState> = MutableStateFlow(
+        CameraUiState(
         flashMode = cameraManager.flashMode,
         primaryFiltersMode =
             if (cameraConfig.colorCorrection != ColorCorrection.NO_FILTER)
@@ -62,7 +66,8 @@ class CameraViewModelImpl @Inject constructor(
         pipelineCameraDirection = cameraManager.direction,
         colorCorrectionMode = cameraConfig.colorCorrection,
         colorCorrectionPower = cameraConfig.colorCorrectionPower
-    ))
+    )
+    )
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
 
     override fun setSurface(surface: Surface?) =

@@ -1,7 +1,6 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import androidx.annotation.DrawableRes
-import androidx.annotation.IdRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.tomsksoft.videoeffectsrecorder.R
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.GalleryScreen
+import com.tomsksoft.videoeffectsrecorder.ui.entity.GalleryRoute
 
 @Preview
 @Composable
@@ -39,7 +38,7 @@ fun GalleryWrapper(
     onGalleryLocalClick: () -> Unit,
     onGalleryAllClick: () -> Unit
 ) {
-    var screenState by remember { mutableStateOf(GalleryScreen.LOCAL) }
+    var screenState by remember { mutableStateOf(GalleryRoute.LOCAL) }
     Column {
         GalleryTopBar(
             screenState,
@@ -55,11 +54,11 @@ fun GalleryWrapper(
             screenState = screenState,
             onGalleryLocalClick = {
                 onGalleryLocalClick()
-                screenState = GalleryScreen.LOCAL
+                screenState = GalleryRoute.LOCAL
             },
             onGalleryAllClick = {
                 onGalleryAllClick()
-                screenState = GalleryScreen.ALL
+                screenState = GalleryRoute.ALL
             }
         )
     }
@@ -67,7 +66,7 @@ fun GalleryWrapper(
 
 @Composable
 fun GalleryNavigationBar(
-    screenState: GalleryScreen,
+    screenState: GalleryRoute,
     onGalleryLocalClick: () -> Unit,
     onGalleryAllClick: () -> Unit
 ) {
@@ -76,7 +75,7 @@ fun GalleryNavigationBar(
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         NavigationBarItem(
-            selected = screenState == GalleryScreen.LOCAL,
+            selected = screenState == GalleryRoute.LOCAL,
             onClick = onGalleryLocalClick,
             icon = {
                 NavigationBarIcon(
@@ -86,7 +85,7 @@ fun GalleryNavigationBar(
             }
         )
         NavigationBarItem(
-            selected = screenState == GalleryScreen.ALL,
+            selected = screenState == GalleryRoute.ALL,
             onClick = onGalleryAllClick,
             icon = {
                 NavigationBarIcon(
@@ -122,12 +121,12 @@ fun NavigationBarIcon(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleryTopBar(
-    screenState: GalleryScreen,
+    screenState: GalleryRoute,
     onCameraClick: () -> Unit
 ) {
     TopAppBar(
         title = {
-            Text(text = if (screenState == GalleryScreen.LOCAL) "Effects App media" else "All media on device")
+            Text(text = if (screenState == GalleryRoute.LOCAL) "Effects App media" else "All media on device")
         },
         colors = TopAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,

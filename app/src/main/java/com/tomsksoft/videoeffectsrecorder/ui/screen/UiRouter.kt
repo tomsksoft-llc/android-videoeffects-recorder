@@ -14,7 +14,6 @@ import androidx.navigation.compose.rememberNavController
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.GalleryViewModelImpl
 
 object UiRouter {
-	@OptIn(ExperimentalMaterial3Api::class)
 	@Composable
 	fun VideoEffectsRecorderApp(
 		navController: NavHostController = rememberNavController()
