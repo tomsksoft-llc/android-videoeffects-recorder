@@ -3,17 +3,20 @@ package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
+import com.tomsksoft.videoeffectsrecorder.ui.entity.CameraUiState
+import com.tomsksoft.videoeffectsrecorder.ui.entity.PrimaryFiltersMode
+import com.tomsksoft.videoeffectsrecorder.ui.entity.SecondaryFiltersMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
 
-object CameraViewModelStub: ICameraViewModel {
+object CameraViewModelStub: CameraViewModel {
     override val cameraUiState: StateFlow<CameraUiState> = MutableStateFlow(CameraUiState())
-    override val cameraConfigData: CameraConfig = CameraConfig()
+    override val cameraConfig: CameraConfig = CameraConfig()
+    override val isCameraEnabled = false
 
     override fun setSurface(surface: Surface?) = throw unimplementedError()
-    override fun setFlash() = throw unimplementedError()
+    override fun changeFlashMode() = throw unimplementedError()
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) = throw unimplementedError()
     override fun setSecondaryFilters(filtersMode: SecondaryFiltersMode) = throw unimplementedError()
     override fun setBackground(bitmapStream: InputStream) = throw unimplementedError()

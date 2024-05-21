@@ -25,18 +25,18 @@ class CameraManagerTest {
 	fun testProperties() {
 		val config = CameraConfig()
 		manager.cameraConfig.onNext(config)
-		assertEquals(config, camera.cameraConfig) // check if manager pass by config
+		assertEquals(config, camera._cameraConfig) // check if manager pass by config
 		manager.direction = Camera.Direction.BACK
-		assertEquals(Camera.Direction.BACK, manager.direction)
+		assertEquals(Camera.Direction.BACK, camera._direction)
 		manager.direction = Camera.Direction.FRONT
-		assertEquals(Camera.Direction.FRONT, manager.direction)
-		assert(manager.orientation in 0..359)
+		assertEquals(Camera.Direction.FRONT, camera._direction)
+		assert(manager.orientation in 0..359 && manager.orientation % 90 == 0)
 	}
 
 	@Test
 	fun testFlash() {
 		manager.apply {
-			isEnabled = true
+			camera.isEnabled = true
 
 			flashMode = FlashMode.ON
 			assertEquals(true, isFlashEnabled)
@@ -58,14 +58,14 @@ class CameraManagerTest {
 			assertEquals(false, isFlashEnabled)
 			assertEquals(FlashMode.AUTO, flashMode)
 
-			isEnabled = false
+			camera.isEnabled = false
 		}
 	}
 
 	@Test
 	@Timeout(FIRST_FRAME_TIMEOUT, unit = TimeUnit.MILLISECONDS)
 	fun testFramesEmitting() {
-		manager.isEnabled = true
+		manager.camera.isEnabled = true
 
 		val lock = ReentrantLock()
 		val gotFrame = lock.newCondition()
@@ -83,6 +83,6 @@ class CameraManagerTest {
 				lock.unlock()
 			}
 
-		manager.isEnabled = false
+		manager.camera.isEnabled = false
 	}
 }

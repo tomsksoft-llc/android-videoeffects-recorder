@@ -78,6 +78,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
@@ -85,12 +87,12 @@ import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraUiState
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.ICameraViewModel
+import com.tomsksoft.videoeffectsrecorder.ui.entity.CameraUiState
+import com.tomsksoft.videoeffectsrecorder.ui.entity.PrimaryFiltersMode
+import com.tomsksoft.videoeffectsrecorder.ui.entity.SecondaryFiltersMode
+import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelImpl
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelStub
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.PrimaryFiltersMode
-import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.SecondaryFiltersMode
 import kotlinx.coroutines.launch
 
 private const val REQUEST_PICK_PHOTO_BACKGROUND = 1
@@ -102,6 +104,7 @@ private annotation class PickPhotoCode
 @Composable
 fun CameraScreen(onGalleryClick: () -> Unit) {
 	val context = LocalContext.current
+	val viewModel = hiltViewModel<CameraViewModelImpl>()
 
 	// permissions
 	val permissionsLauncher = rememberMultiplePermissionsState(
@@ -123,8 +126,12 @@ fun CameraScreen(onGalleryClick: () -> Unit) {
 		}
 	}
 
+	// use camera while screen is visible
+	LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.isCameraEnabled = true }
+	LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.isCameraEnabled = false }
+
 	// ui
-	CameraUi(hiltViewModel<CameraViewModelImpl>(), onGalleryClick)
+	CameraUi(viewModel, onGalleryClick)
 }
 
 @Preview
@@ -134,7 +141,7 @@ fun CameraPreview() {
 }
 
 @Composable
-fun CameraUi(viewModel: ICameraViewModel, onGalleryClick: () -> Unit) {
+fun CameraUi(viewModel: CameraViewModel, onGalleryClick: () -> Unit) {
 	val context = LocalContext.current
 	val cameraUiState: CameraUiState by viewModel.cameraUiState.collectAsState()
 	val snackbarHostState = remember { SnackbarHostState() }
@@ -197,7 +204,7 @@ fun CameraUi(viewModel: ICameraViewModel, onGalleryClick: () -> Unit) {
 				TopBar(
 					cameraUiState,
 					snackbarHostState,
-					viewModel::setFlash,
+					viewModel::changeFlashMode,
 					viewModel::setSecondaryFilters,
 					onGalleryClick
 				)
