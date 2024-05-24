@@ -38,10 +38,10 @@ dependencies {
 	implementation(libs.rxjava3.rxjava)
 
 	/* Effects SDK */
+	implementation(project(":effects"))
 	implementation(libs.flogger.flogger)
 	implementation(libs.flogger.system.backend)
 	implementation(libs.guava)
-	implementation(files("../libs/effects.aar"))
 	implementation(libs.androidx.camera.camera2)
 	implementation(libs.androidx.camera.extensions)
 	implementation(libs.androidx.camera.lifecycle)
