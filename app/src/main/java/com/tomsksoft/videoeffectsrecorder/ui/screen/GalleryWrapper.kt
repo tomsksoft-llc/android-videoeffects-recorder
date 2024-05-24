@@ -14,34 +14,35 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.tomsksoft.videoeffectsrecorder.R
-import com.tomsksoft.videoeffectsrecorder.ui.entity.GalleryRoute
 
 @Preview
 @Composable
 fun GalleryWrapperPreview(){
-    GalleryWrapper(onGalleryLocalClick = { }, onGalleryAllClick = {}, onCameraClick = {})
+    GalleryWrapper(onGalleryLocalClick = { }, onGalleryAllClick = {}, onCameraClick = {}, navController = rememberNavController())
 }
 
 @Composable
 fun GalleryWrapper(
     mainContent: @Composable (ColumnScope.() -> Unit)? = null,
+    navController: NavController,
     onCameraClick: () -> Unit,
     onGalleryLocalClick: () -> Unit,
     onGalleryAllClick: () -> Unit
 ) {
-    var screenState by remember { mutableStateOf(GalleryRoute.LOCAL) }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
     Column {
         GalleryTopBar(
-            screenState,
+            navBackStackEntry,
             onCameraClick
         )
         Column(
@@ -51,14 +52,12 @@ fun GalleryWrapper(
             mainContent?.invoke(this)
         }
         GalleryNavigationBar(
-            screenState = screenState,
+            navBackStackEntry = navBackStackEntry,
             onGalleryLocalClick = {
                 onGalleryLocalClick()
-                screenState = GalleryRoute.LOCAL
             },
             onGalleryAllClick = {
                 onGalleryAllClick()
-                screenState = GalleryRoute.ALL
             }
         )
     }
@@ -66,7 +65,7 @@ fun GalleryWrapper(
 
 @Composable
 fun GalleryNavigationBar(
-    screenState: GalleryRoute,
+    navBackStackEntry: NavBackStackEntry?,
     onGalleryLocalClick: () -> Unit,
     onGalleryAllClick: () -> Unit
 ) {
@@ -74,8 +73,9 @@ fun GalleryNavigationBar(
         modifier = Modifier,
         containerColor = MaterialTheme.colorScheme.surface
     ) {
+        val currentRoute = navBackStackEntry?.destination?.route
         NavigationBarItem(
-            selected = screenState == GalleryRoute.LOCAL,
+            selected = currentRoute == GALLERY_LOCAL_ROUTE,
             onClick = onGalleryLocalClick,
             icon = {
                 NavigationBarIcon(
@@ -85,7 +85,7 @@ fun GalleryNavigationBar(
             }
         )
         NavigationBarItem(
-            selected = screenState == GalleryRoute.ALL,
+            selected = currentRoute == GALLERY_ALL_ROUTE,
             onClick = onGalleryAllClick,
             icon = {
                 NavigationBarIcon(
@@ -121,12 +121,12 @@ fun NavigationBarIcon(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleryTopBar(
-    screenState: GalleryRoute,
+    navBackStackEntry: NavBackStackEntry?,
     onCameraClick: () -> Unit
 ) {
     TopAppBar(
         title = {
-            Text(text = if (screenState == GalleryRoute.LOCAL) "Effects App media" else "All media on device")
+            Text(text = if (navBackStackEntry?.destination?.route == GALLERY_LOCAL_ROUTE) "Effects App media" else "All media on device")
         },
         colors = TopAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
