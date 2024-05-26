@@ -83,8 +83,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tomsksoft.videoeffectsrecorder.R
-import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.entity.Direction
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.toPx
 import com.tomsksoft.videoeffectsrecorder.ui.entity.CameraUiState
@@ -567,7 +567,7 @@ private fun TopBar(
 				FlashMode.OFF -> R.drawable.ic_flash_off
 			}),
 			onClick = onFlashSettingClick,
-			enabled = cameraUiState.pipelineCameraDirection == Camera.Direction.BACK
+			enabled = cameraUiState.pipelineCameraDirection == Direction.BACK
 		)
 
 		// ---> three secondary filters options

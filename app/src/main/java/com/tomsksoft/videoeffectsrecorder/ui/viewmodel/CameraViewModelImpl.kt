@@ -1,17 +1,19 @@
 package com.tomsksoft.videoeffectsrecorder.ui.viewmodel
 
+import android.app.Application
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.util.Log
 import android.view.Surface
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.tomsksoft.videoeffectsrecorder.data.AndroidCamera
+import com.tomsksoft.videoeffectsrecorder.data.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.BackgroundMode
-import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
+import com.tomsksoft.videoeffectsrecorder.domain.entity.Direction
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import com.tomsksoft.videoeffectsrecorder.ui.entity.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.entity.PrimaryFiltersMode
@@ -30,22 +32,26 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CameraViewModelImpl @Inject constructor(
+    app: Application,
     private val cameraRecordManager: CameraRecordManager,
     private val cameraManager: CameraManager
-): ViewModel(), CameraViewModel {
+): AndroidViewModel(app), CameraViewModel {
     companion object {
         private const val TAG = "Camera View Model"
     }
 
+    private val context: Context get() = getApplication()
+    private var surface: Surface? = null
+
     private var _cameraConfig: CameraConfig
-        get() = cameraManager.cameraConfig.value!!
-        set(value) = cameraManager.cameraConfig.onNext(value)
+        get() = cameraManager.cameraConfig.blockingFirst()
+        set(value) = cameraManager.setCameraConfig(value)
 
     override val cameraConfig: CameraConfig
         get() = _cameraConfig
 
     private val _cameraUiState : MutableStateFlow<CameraUiState> = MutableStateFlow(CameraUiState(
-        flashMode = cameraManager.flashMode,
+        flashMode = cameraManager.flashMode.blockingFirst(),
         primaryFiltersMode =
             if (cameraConfig.colorCorrection != ColorCorrection.NO_FILTER)
                 PrimaryFiltersMode.COLOR_CORRECTION
@@ -62,15 +68,41 @@ class CameraViewModelImpl @Inject constructor(
         beautification = cameraConfig.beautification,
         isVideoRecording = cameraRecordManager.isRecording,
         isCameraInitialized = true, // TODO [tva] check if EffectsSDK is initialized
-        pipelineCameraDirection = cameraManager.direction,
+        pipelineCameraDirection = cameraManager.direction.blockingFirst(),
         colorCorrectionMode = cameraConfig.colorCorrection,
         colorCorrectionPower = cameraConfig.colorCorrectionPower
     ))
     override val cameraUiState: StateFlow<CameraUiState> = _cameraUiState.asStateFlow()
-    override var isCameraEnabled by cameraManager.camera::isEnabled
 
-    override fun setSurface(surface: Surface?) =
-        (cameraManager.camera as AndroidCamera).setSurface(surface)
+    private var camera: Camera? = null
+    var isCameraEnabled: Boolean
+        get() = camera != null
+        set(value) {
+            if (isCameraEnabled == value) return
+            if (value) {
+                camera = Camera(context, cameraManager)
+                camera?.setSurface(surface)
+            } else {
+                camera?.close()
+                camera = null
+            }
+        }
+
+    private val directionObserverDisposable = cameraManager.direction.subscribe {
+        isCameraEnabled = false
+        isCameraEnabled = true
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        directionObserverDisposable.dispose()
+        isCameraEnabled = false
+    }
+
+    override fun setSurface(surface: Surface?) {
+        this.surface = surface
+        camera?.setSurface(surface)
+    }
 
     override fun changeFlashMode() {
         setFlashMode(cameraUiState.value.flashMode.getNextFlashMode())
@@ -82,7 +114,7 @@ class CameraViewModelImpl @Inject constructor(
                 flashMode = mode
             )
         }
-        cameraManager.flashMode = mode
+        cameraManager.setFlashMode(mode)
     }
 
     override fun setPrimaryFilter(filtersMode: PrimaryFiltersMode) {
@@ -170,25 +202,26 @@ class CameraViewModelImpl @Inject constructor(
     }
 
     override fun flipCamera() {
-        if (cameraManager.direction == Camera.Direction.FRONT)
+        if (cameraManager.direction.blockingFirst() == Direction.FRONT)
             setFlashMode(FlashMode.OFF)
 
-        cameraManager.direction =
-            if (cameraManager.direction == Camera.Direction.BACK)
-                Camera.Direction.FRONT
+        cameraManager.setDirection(
+            if (cameraManager.direction.blockingFirst() == Direction.BACK)
+                Direction.FRONT
             else
-                Camera.Direction.BACK
+                Direction.BACK
+        )
 
         _cameraUiState.update {cameraUiState ->
             cameraUiState.copy(
-                pipelineCameraDirection = cameraManager.direction
+                pipelineCameraDirection = cameraManager.direction.blockingFirst()
             )
         }
     }
 
     override fun captureImage() {
         Log.d(TAG, "Capture image")
-        cameraRecordManager.takePhoto()
+        cameraRecordManager.takePhoto(camera!!.frame)
     }
 
     override fun startVideoRecording() {
@@ -199,18 +232,20 @@ class CameraViewModelImpl @Inject constructor(
                 isVideoRecording = true
             )
         }
-        cameraRecordManager.isRecording = true
 
+        cameraRecordManager.startRecord(camera!!.frame)
     }
 
     override fun stopVideoRecording() {
+        Log.d(TAG, "Stop recording")
+
         _cameraUiState.update { cameraUiState ->
             cameraUiState.copy(
                 isVideoRecording = false
             )
         }
-        Log.d(TAG, "Stop recording")
-        cameraRecordManager.isRecording = false
+
+        cameraRecordManager.stopRecord()
     }
 
     override fun setBlurPower(value: Float) {
