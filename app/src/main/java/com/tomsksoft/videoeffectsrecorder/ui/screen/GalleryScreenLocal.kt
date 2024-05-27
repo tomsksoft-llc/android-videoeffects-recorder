@@ -1,6 +1,5 @@
 package com.tomsksoft.videoeffectsrecorder.ui.screen
 
-import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -30,6 +29,7 @@ import coil.compose.AsyncImage
 import coil.decode.VideoFrameDecoder
 import coil.request.ImageRequest
 import com.tomsksoft.videoeffectsrecorder.R
+import com.tomsksoft.videoeffectsrecorder.domain.entity.Media
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.GalleryViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.GalleryViewModelStub
 
@@ -50,7 +50,7 @@ fun GalleryScreenLocal(
     LaunchedEffect(Unit) {
         viewModel.loadMediaList()
     }
-    val mediaList: List<Uri> by viewModel.mediaList.subscribeAsState(initial = listOf())
+    val mediaList: List<Media> by viewModel.mediaList.subscribeAsState(initial = listOf())
 
     Box(
         modifier = Modifier
@@ -63,7 +63,7 @@ fun GalleryScreenLocal(
 
 @Composable
 fun MediaGrid(
-    mediaList: List<Uri>
+    mediaList: List<Media>
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(100.dp),
@@ -74,7 +74,7 @@ fun MediaGrid(
             mediaList
         ) {mediaItem ->
             MediaImage(
-                uri = mediaItem
+                media = mediaItem
             )
         }
     }
@@ -82,16 +82,16 @@ fun MediaGrid(
 
 @Composable
 fun MediaImage(
-    uri: Uri
+    media: Media
 ) {
     Box(
         modifier = Modifier
             .padding(2.dp)
             .aspectRatio(1f)
     ) {
-        if (uri.toString().contains("video")) {
+        if (media.isVideo) {
             val model = ImageRequest.Builder(LocalContext.current)
-                .data(uri)
+                .data(media.uri)
                 .decoderFactory{result, options, _ ->
                     VideoFrameDecoder(
                         result.source,
@@ -113,9 +113,9 @@ fun MediaImage(
                 tint = MaterialTheme.colorScheme.background
             )
         }
-        else if (uri.toString().contains("image")) {
+        else {
             AsyncImage(
-                model = uri,
+                model = media.uri,
                 contentDescription = null,
                 contentScale = ContentScale.Crop
             )

@@ -1,6 +1,5 @@
 package com.tomsksoft.videoeffectsrecorder.data
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
@@ -10,6 +9,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.MediaPicker
+import com.tomsksoft.videoeffectsrecorder.domain.entity.Media
 
 class MediaPickerImpl(val context: Context): MediaPicker {
     companion object {
@@ -35,7 +35,15 @@ class MediaPickerImpl(val context: Context): MediaPicker {
 
     private var cursor: Cursor? = null
 
-    override fun loadVideos(): List<String> {
+    /**
+     * Loads media from the device's external storage.
+     *
+     * This method queries the MediaStore for both video and image media, merges the results into a single cursor,
+     * and then returns the media as a list of [Media] objects.
+     *
+     * @return a list of [Media] objects representing the media found on the device.
+     */
+    override fun loadMedia(): List<Media> {
         cursor = MergeCursor(
             arrayOf(
                 contentResolver.query(
@@ -55,27 +63,49 @@ class MediaPickerImpl(val context: Context): MediaPicker {
             )
         )
         Log.d(TAG, "Query was called with ${cursor?.count} rows retrieved")
-        return loadUriList(cursor).map(Uri::toString)
-    }
 
-    @SuppressLint("Range")  // TODO [fmv] look into it later
-    private fun loadUriList(cursor: Cursor?): List<Uri> {
-        val uriList = mutableListOf<Uri>()
+        // Create a list of Media objects using cursor
+        return loadMediaList(cursor)
+    }
+    /**
+     * Loads media from the given cursor and returns a list of Media objects.
+     *
+     * @param cursor The cursor containing the media data.
+     * @return list of Media objects representing the media found in the cursor.
+     */
+    @Throws(Exception::class)
+    private fun loadMediaList(cursor: Cursor?): List<Media> {
+        val mediaList = mutableListOf<Media>()
         cursor?.moveToFirst()
         while (cursor!!.moveToNext()) {
-            var contentUri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-            if (cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)).contains("image"))
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
+            var isVideo: Boolean
+            // Determine URI path based on media type
+            var contentUri: Uri
+            if (cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)).contains("image")) {
                 contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-            else if (cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)).contains("video"))
+                isVideo = false
+            } else if (cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)).contains("video")) {
                 contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            val videoUri: Uri = ContentUris
+                isVideo = true
+            } else continue // if there's no "image" or "video" in URI, then probably something is wrong with file
+            // Append the media ID to the URI path
+            val mediaUri: Uri = ContentUris
                 .withAppendedId(
                     contentUri,
-                    cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID)).toLong()
+                    id
                 )
-            uriList.add(videoUri)
-            Log.d(TAG, "$videoUri")
+            val mediaLabel: String = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME))
+
+            val mediaItem = Media(
+                id = id,
+                uri = mediaUri.toString(),
+                label = mediaLabel,
+                isVideo = isVideo
+            )
+            mediaList.add(mediaItem)
+            Log.d(TAG, "$mediaItem")
         }
-        return uriList
+        return mediaList
     }
 }
