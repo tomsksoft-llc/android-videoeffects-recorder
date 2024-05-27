@@ -2,15 +2,18 @@ package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.EditMediaViewModel
+import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.EditMediaViewModelImpl
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.GalleryViewModelImpl
 
 object UiRouter {
@@ -44,7 +47,10 @@ object UiRouter {
 								composable(route = "GalleryLocalScreen") {
 									GalleryScreenLocal(
 										viewModel = hiltViewModel<GalleryViewModelImpl>(),
-										onCameraClick = { navController.navigate("CameraScreen") }
+										onCameraClick = { navController.navigate("CameraScreen") },
+										onMediaClick = { id ->
+											navController.navigate("MediaScreen" + "?id=${id}")
+										}
 									)
 								}
 								composable(route = "GalleryAllScreen") {
@@ -52,6 +58,38 @@ object UiRouter {
 								}
 							}
 						}
+					)
+				}
+				composable(
+					route = "MediaScreen?id={id}",
+					arguments = listOf(
+						navArgument(name = "id") {
+							type = NavType.LongType
+						}
+					)
+				) {navBackStackEntry ->
+					val id = navBackStackEntry.arguments?.getLong("id")
+					MediaScreen(
+						viewModel = hiltViewModel<GalleryViewModelImpl>(),
+						id = id,
+						onGalleryClick = { navController.navigate("GalleryScreen") },
+						onEditMedia = {uri ->
+							navController.navigate("EditMediaScreen" + "?uri=${uri}")
+						}
+					)
+				}
+				composable(
+					route = "EditMediaScreen?uri={uri}",
+					arguments = listOf(
+						navArgument(name = "uri") {
+							type = NavType.StringType
+						}
+					)
+				) { navBackStackEntry ->
+					val uri = navBackStackEntry.arguments?.getString("uri")
+					EditMediaScreen(
+						viewModel = hiltViewModel<EditMediaViewModelImpl>(),
+						uri = uri
 					)
 				}
 			}

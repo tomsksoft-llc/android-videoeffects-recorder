@@ -2,7 +2,9 @@ package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
@@ -36,13 +38,14 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.GalleryViewModelStub
 @Composable
 @Preview
 fun GalleryScreenLocalPreview() {
-    GalleryScreenLocal(GalleryViewModelStub, {})
+    GalleryScreenLocal(GalleryViewModelStub, {}, {})
 }
 
 @Composable
 fun GalleryScreenLocal(
     viewModel: GalleryViewModel,
-    onCameraClick: () -> Unit
+    onCameraClick: () -> Unit,
+    onMediaClick: (id: Long) -> Unit
 ) {
     BackHandler {
         onCameraClick()
@@ -57,13 +60,17 @@ fun GalleryScreenLocal(
             .fillMaxSize()
             .background(color = MaterialTheme.colorScheme.background)
     ) {
-        MediaGrid(mediaList = mediaList)
+        MediaGrid(
+            mediaList = mediaList,
+            onMediaClick = onMediaClick
+        )
     }
 }
 
 @Composable
 fun MediaGrid(
-    mediaList: List<Media>
+    mediaList: List<Media>,
+    onMediaClick: (id: Long) -> Unit
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(100.dp),
@@ -74,20 +81,26 @@ fun MediaGrid(
             mediaList
         ) {mediaItem ->
             MediaImage(
-                media = mediaItem
+                media = mediaItem,
+                onMediaClick = onMediaClick
             )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MediaImage(
-    media: Media
+    media: Media,
+    onMediaClick: (id: Long) -> Unit
 ) {
     Box(
         modifier = Modifier
             .padding(2.dp)
             .aspectRatio(1f)
+            .combinedClickable(
+                onClick = {onMediaClick(media.id)}
+            )
     ) {
         if (media.isVideo) {
             val model = ImageRequest.Builder(LocalContext.current)

@@ -4,10 +4,12 @@ import android.content.Context
 import com.tomsksoft.videoeffectsrecorder.BuildConfig
 import com.tomsksoft.videoeffectsrecorder.data.CameraImpl
 import com.tomsksoft.videoeffectsrecorder.data.MediaPickerImpl
+import com.tomsksoft.videoeffectsrecorder.data.MediaProcessorImpl
 import com.tomsksoft.videoeffectsrecorder.data.PhotoPickerImpl
 import com.tomsksoft.videoeffectsrecorder.data.VideoRecorderImpl
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.MediaPicker
+import com.tomsksoft.videoeffectsrecorder.domain.boundary.MediaProcessor
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
 import dagger.Module
@@ -39,4 +41,9 @@ object BoundaryInterfacesModule {
     @Singleton
     fun provideMediaPicker(@ApplicationContext context: Context): MediaPicker =
         MediaPickerImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideMediaProcessor(@ApplicationContext context: Context): MediaProcessor =
+        MediaProcessorImpl(context)
 }

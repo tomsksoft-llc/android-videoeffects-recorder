@@ -82,7 +82,7 @@ class CameraImpl(
         pipeline.setSegmentationGap(1)
         pipeline.setOnFrameAvailableListener(this)
         pipeline.setOrientationChangeListener(OrientationChangeListenerImpl())
-        pipeline.setOutputSurface(surface)
+        //pipeline.setOutputSurface(surface)
         pipeline.startPipeline()
         this.pipeline = pipeline
     }
@@ -104,7 +104,7 @@ class CameraImpl(
 
     override fun setSurface(surface: Surface?) {
         this.surface = surface
-        pipeline?.setOutputSurface(this.surface)
+        //pipeline?.setOutputSurface(this.surface)
     }
 
     override fun setFlashEnabled(enabled: Boolean) {
