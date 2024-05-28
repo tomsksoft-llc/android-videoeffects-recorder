@@ -58,6 +58,10 @@ class MediaPickerImpl(val context: Context): MediaPicker {
         return loadUriList(cursor).map(Uri::toString)
     }
 
+    override fun deleteVideos(uriList: List<String>) {
+        for (i in uriList) contentResolver.delete(Uri.parse(i), null, null)
+    }
+
     @SuppressLint("Range")  // TODO [fmv] look into it later
     private fun loadUriList(cursor: Cursor?): List<Uri> {
         val uriList = mutableListOf<Uri>()

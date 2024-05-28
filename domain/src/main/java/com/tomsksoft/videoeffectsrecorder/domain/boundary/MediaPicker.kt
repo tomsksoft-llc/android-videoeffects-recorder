@@ -5,4 +5,5 @@ interface MediaPicker {
      * @return URI's
      */
     fun loadVideos(): List<String>
+    fun deleteVideos(uriList: List<String>)
 }
