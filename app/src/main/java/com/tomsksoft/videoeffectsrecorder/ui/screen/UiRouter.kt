@@ -2,6 +2,7 @@ package com.tomsksoft.videoeffectsrecorder.ui.screen
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,6 +17,13 @@ import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.EditMediaViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.EditMediaViewModelImpl
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.GalleryViewModelImpl
 
+/* Routes */
+const val CAMERA_ROUTE = "CameraScreen"
+const val GALLERY_ROUTE = "GalleryScreen"
+const val GALLERY_LOCAL_ROUTE = "GalleryLocalScreen"
+const val GALLERY_ALL_ROUTE = "GalleryAllScreen"
+/* * */
+
 object UiRouter {
 	@Composable
 	fun VideoEffectsRecorderApp(
@@ -24,37 +32,40 @@ object UiRouter {
 		Scaffold { innerPadding ->
 			NavHost(
 				navController = navController,
-				startDestination = "CameraScreen",
+				startDestination = CAMERA_ROUTE,
 				modifier = Modifier
 					.fillMaxSize()
 					.padding(innerPadding)
 			) {
-				composable(route = "CameraScreen") {
-					CameraScreen({navController.navigate("GalleryScreen")})
+				composable(route = CAMERA_ROUTE) {
+					CameraScreen{navController.navigate(GALLERY_ROUTE)}
 				}
-				composable(route = "GalleryScreen") {
+				composable(route = GALLERY_ROUTE) {
 					val galleryNavController = rememberNavController()
+					val viewModel = hiltViewModel<GalleryViewModelImpl>()
 					GalleryWrapper(
-						onGalleryLocalClick = { galleryNavController.navigate("GalleryLocalScreen") },
-						onGalleryAllClick =  { galleryNavController.navigate("GalleryAllScreen") },
-						onCameraClick = {navController.navigate("CameraScreen")},
+						viewModel = viewModel,
+						navController = galleryNavController,
+						onGalleryLocalClick = { galleryNavController.navigate(GALLERY_LOCAL_ROUTE) },
+						onGalleryAllClick =  { galleryNavController.navigate(GALLERY_ALL_ROUTE) },
+						onCameraClick = {navController.navigate(CAMERA_ROUTE)},
 						mainContent = {
 							NavHost(
 								navController = galleryNavController,
-								startDestination = "GalleryLocalScreen",
-								route = "GalleryScreen"
+								startDestination = GALLERY_LOCAL_ROUTE,
+								route = GALLERY_ROUTE
 							) {
-								composable(route = "GalleryLocalScreen") {
+								composable(route = GALLERY_LOCAL_ROUTE) {
 									GalleryScreenLocal(
-										viewModel = hiltViewModel<GalleryViewModelImpl>(),
-										onCameraClick = { navController.navigate("CameraScreen") },
+                                        viewModel = viewModel,
 										onMediaClick = { id ->
 											navController.navigate("MediaScreen" + "?id=${id}")
-										}
+										},
+										onCameraClick = { navController.navigate(CAMERA_ROUTE) }
 									)
 								}
-								composable(route = "GalleryAllScreen") {
-									GalleryScreenAll(hiltViewModel<GalleryViewModelImpl>())
+								composable(route = GALLERY_ALL_ROUTE) {
+									GalleryScreenAll(viewModel)
 								}
 							}
 						}

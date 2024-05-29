@@ -19,38 +19,27 @@ import com.effectssdk.tsvb.pipeline.PipelineMode
 import com.tomsksoft.videoeffectsrecorder.domain.entity.BackgroundMode
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
 import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
-import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
+import com.tomsksoft.videoeffectsrecorder.domain.entity.Direction
+import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraManager
+import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 
-class CameraImpl(
-    private val context: Context
-): AndroidCamera, AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
+class Camera(
+    private val context: Context,
+    private val manager: CameraManager,
+    direction: Direction = manager.direction.blockingFirst()
+): AutoCloseable, OnFrameAvailableListener, LifecycleOwner {
     companion object {
         private const val TAG = "Camera"
         private val factory = EffectsSDK.createSDKFactory()
     }
 
     override var lifecycle = LifecycleRegistry(this)
-    override val frame = BehaviorSubject.create<Any>()
-    override var orientation: Int = 0
-    override var isEnabled: Boolean = false
-        set(value) {
-            if (field == value) return
-            field = value
-            if (value)
-                createPipeline()
-            else
-                releasePipeline()
-        }
 
-    /**
-     * Cached direction for {@link createPipeline}
-     */
-    private var _direction = Camera.Direction.BACK
-    /**
-     * Updates only by {@link releasePipeline} and {@link createPipeline}
-     */
-    private var pipeline: CameraPipeline? = null
+    private val _frame = BehaviorSubject.create<Any>()
+    val frame = _frame.hide()
+
+    private var pipeline: CameraPipeline = createPipeline(direction)
     private var surface: Surface? = null
     private val cam = ProcessCameraProvider
         .getInstance(context).get()
@@ -58,73 +47,51 @@ class CameraImpl(
             this,
             CameraSelector.DEFAULT_BACK_CAMERA
         )
+    private val disposables: CompositeDisposable // subscription to manager
 
     init {
+        disposables = CompositeDisposable(
+            manager.cameraConfig.subscribe(this::configure),
+            manager.isFlashEnabled.subscribe(this::setFlashEnabled)
+        )
         lifecycle.currentState = Lifecycle.State.CREATED
     }
 
-    /**
-     * Updates pipeline property with new instance
-     * @see pipeline
-     */
-    private fun createPipeline() {
-        Log.d(TAG, "Create pipeline")
-
-        val pipeline = factory.createCameraPipeline(
-            context,
-            fpsListener = { Log.d("FPS", it.toString()) },
-            camera = when (_direction) {
-                Camera.Direction.BACK -> com.effectssdk.tsvb.Camera.BACK
-                Camera.Direction.FRONT -> com.effectssdk.tsvb.Camera.FRONT
-            }
-        )
-
-        pipeline.setSegmentationGap(1)
-        pipeline.setOnFrameAvailableListener(this)
-        pipeline.setOrientationChangeListener(OrientationChangeListenerImpl())
-        //pipeline.setOutputSurface(surface)
-        pipeline.startPipeline()
-        this.pipeline = pipeline
-    }
-
-    private fun releasePipeline() {
-        Log.d(TAG, "Release pipeline")
-        pipeline?.release()
-        pipeline = null
-    }
-
-    override fun onNewFrame(bitmap: Bitmap) =
-        frame.onNext(FrameMapper.toAny(bitmap))
+    override fun onNewFrame(bitmap: Bitmap) = _frame.onNext(FrameMapper.toAny(bitmap))
 
     override fun close() {
-        isEnabled = false
+        disposables.dispose()
+        pipeline.release()
         lifecycle.currentState = Lifecycle.State.DESTROYED // unbind CameraX
-        releasePipeline()
     }
 
-    override fun setSurface(surface: Surface?) {
+    fun setSurface(surface: Surface?) {
         this.surface = surface
-        //pipeline?.setOutputSurface(this.surface)
+        pipeline.setOutputSurface(this.surface)
     }
 
-    override fun setFlashEnabled(enabled: Boolean) {
+    private fun createPipeline(direction: Direction): CameraPipeline =
+        factory.createCameraPipeline(
+            context,
+            fpsListener = { Log.d("FPS", it.toString()) },
+            camera = when (direction) {
+                Direction.BACK -> com.effectssdk.tsvb.Camera.BACK
+                Direction.FRONT -> com.effectssdk.tsvb.Camera.FRONT
+            }
+        ).apply {
+            setSegmentationGap(1)
+            setOnFrameAvailableListener(this@Camera)
+            setOrientationChangeListener(OrientationChangeListenerImpl())
+            setOutputSurface(surface)
+            startPipeline()
+        }
+
+    private fun setFlashEnabled(enabled: Boolean) {
         cam.cameraControl.enableTorch(enabled)
     }
 
-    override fun setDirection(direction: Camera.Direction) {
-        if (direction == this._direction)
-            return
-
-        this._direction = direction
-
-        if (isEnabled) { // recreate pipeline for relevant direction
-            releasePipeline()
-            createPipeline()
-        }
-    }
-
-    override fun configure(cameraConfig: CameraConfig): Unit {
-        pipeline?.run {
+    private fun configure(cameraConfig: CameraConfig) {
+        pipeline.run {
             /* Background Mode */
             when (cameraConfig.backgroundMode) {
                 BackgroundMode.Regular -> setMode(PipelineMode.NO_EFFECT)
@@ -162,11 +129,12 @@ class CameraImpl(
         }
     }
 
-    inner class OrientationChangeListenerImpl: OrientationChangeListener {
+    private inner class OrientationChangeListenerImpl: OrientationChangeListener {
         override fun onOrientationChanged(deviceOrientation: DeviceOrientation, rotation: Int) {
             // rotation in this callback is counted counter-clockwise,
             // but clockwise degrees are required for android.media.MediaRecorder
-            orientation = (360 - rotation) % 360
+            val orientation = (360 - rotation) % 360
+            manager.setOrientation(orientation)
             Log.d(TAG, "Orientation changed: $orientation")
         }
     }

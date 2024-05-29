@@ -67,6 +67,7 @@ class MediaPickerImpl(val context: Context): MediaPicker {
         // Create a list of Media objects using cursor
         return loadMediaList(cursor)
     }
+
     /**
      * Loads media from the given cursor and returns a list of Media objects.
      *
@@ -107,5 +108,9 @@ class MediaPickerImpl(val context: Context): MediaPicker {
             Log.d(TAG, "$mediaItem")
         }
         return mediaList
+    }
+
+    override fun deleteVideos(uriList: List<String>) {
+        for (i in uriList) contentResolver.delete(Uri.parse(i), null, null)
     }
 }

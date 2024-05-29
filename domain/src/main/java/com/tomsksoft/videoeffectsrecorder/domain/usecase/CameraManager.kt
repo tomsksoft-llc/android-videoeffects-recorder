@@ -1,62 +1,42 @@
 package com.tomsksoft.videoeffectsrecorder.domain.usecase
 
-import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.entity.CameraConfig
+import com.tomsksoft.videoeffectsrecorder.domain.entity.Direction
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 
-class CameraManager(
-    val camera: Camera
-): AutoCloseable {
-    val frameSource by camera::frame
-    val orientation by camera::orientation
+class CameraManager {
+    private val _orientation = BehaviorSubject.createDefault(0)
+    private val _direction = BehaviorSubject.createDefault(Direction.FRONT)
+    private val _flashMode = BehaviorSubject.createDefault(FlashMode.AUTO)
+    private val _isFlashEnabled = BehaviorSubject.createDefault(false)
+    private val _cameraConfig = BehaviorSubject.createDefault(CameraConfig())
 
-    var direction: Camera.Direction = Camera.Direction.FRONT
-        set(value) {
-            if (field == value) return
-            field = value
-            camera.setDirection(value)
-        }
-
-    var flashMode = FlashMode.AUTO
-        set(value) {
-            when (value) {
-                FlashMode.ON -> camera.setFlashEnabled(true)
-                FlashMode.OFF -> camera.setFlashEnabled(false)
-                FlashMode.AUTO -> camera.setFlashEnabled(false)
-            }
-            field = value
-        }
-
-    var isFlashEnabled = false // depends on FlashMode
-        get() {
-            return when (flashMode) {
-                FlashMode.ON -> true
-                FlashMode.OFF -> false
-                FlashMode.AUTO -> field
-            }
-        }
-        set(value) {
-            when (flashMode) {
-                FlashMode.ON -> return
-                FlashMode.OFF -> return
-                FlashMode.AUTO -> {
-                    field = value
-                    camera.setFlashEnabled(value)
-                }
-            }
-        }
-
-    val cameraConfig = BehaviorSubject.createDefault(CameraConfig())
-
-    private val disposable = cameraConfig.subscribe(camera::configure)
-
-    init {
-        camera.apply {
-            setDirection(direction)
-            setFlashEnabled(false)
+    val orientation = _orientation.distinctUntilChanged()
+    val direction = _direction.distinctUntilChanged()
+    val flashMode = _flashMode.distinctUntilChanged()
+    val isFlashEnabled = _isFlashEnabled.distinctUntilChanged().map {
+        when (flashMode.blockingFirst()) { // prevent flash state being inconsistent with its mode
+            FlashMode.ON -> true
+            FlashMode.OFF -> false
+            FlashMode.AUTO -> it
         }
     }
+    val cameraConfig = _cameraConfig.distinctUntilChanged()
 
-    override fun close() = disposable.dispose()
+    init {
+        flashMode.map { mode -> // flash mode automatically updates flash state
+            when (mode) {
+                FlashMode.ON -> true
+                FlashMode.OFF -> false
+                FlashMode.AUTO -> false
+            }
+        }.subscribe(_isFlashEnabled)
+    }
+
+    fun setOrientation(orientation: Int) = _orientation.onNext(orientation)
+    fun setDirection(direction: Direction) = _direction.onNext(direction)
+    fun setFlashMode(flashMode: FlashMode) = _flashMode.onNext(flashMode)
+    fun setFlashEnabled(isEnabled: Boolean) = _isFlashEnabled.onNext(isEnabled)
+    fun setCameraConfig(cameraConfig: CameraConfig) = _cameraConfig.onNext(cameraConfig)
 }

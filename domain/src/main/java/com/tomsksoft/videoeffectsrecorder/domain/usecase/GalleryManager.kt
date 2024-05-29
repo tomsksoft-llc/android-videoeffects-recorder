@@ -15,4 +15,9 @@ class GalleryManager(
     fun loadMedia() {
         _mediaList.onNext(mediaPicker.loadMedia())
     }
+
+    fun deleteMedia(uriList: List<String>) {
+        mediaPicker.deleteVideos(uriList)
+        loadMedia()
+    }
 }

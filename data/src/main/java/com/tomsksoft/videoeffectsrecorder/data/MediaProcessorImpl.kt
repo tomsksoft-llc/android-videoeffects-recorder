@@ -54,7 +54,7 @@ class MediaProcessorImpl(
     override fun setSurface(surface: Surface?) {
         this.surface = surface
         pipeline?.setOutputSurface(this.surface)
-        pipeline?.process(image!!)
+        pipeline?.process(image!!.copy(Bitmap.Config.ARGB_8888, true))
         //pipeline?.process(image!!)
         //pipeline?.process(image!!)
     }
