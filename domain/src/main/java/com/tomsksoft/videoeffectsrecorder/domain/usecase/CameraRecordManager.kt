@@ -3,6 +3,7 @@ package com.tomsksoft.videoeffectsrecorder.domain.usecase
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
+import io.reactivex.rxjava3.core.Observable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -23,43 +24,38 @@ class CameraRecordManager(
     private var record: AutoCloseable? = null
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    var isRecording: Boolean = false
-        set(value) {
-            if (field == value) return
-            field = value
-            if (value) startRecord() else stopRecord()
-        }
+    val isRecording: Boolean get() = record != null
 
-    fun takePhoto() {
+    fun takePhoto(frameSource: Observable<Any>) {
         scope.launch {
             val frame: Any
-            if (cameraManager.flashMode == FlashMode.AUTO) {
-                cameraManager.isFlashEnabled = true
+            if (cameraManager.flashMode.blockingFirst() == FlashMode.AUTO) {
+                cameraManager.setFlashEnabled(true)
                 delay(1000L)
-                frame = cameraManager.frameSource.blockingFirst()
-                cameraManager.isFlashEnabled = false
+                frame = frameSource.blockingFirst()
+                cameraManager.setFlashEnabled(false)
             } else {
-                frame = cameraManager.frameSource.blockingFirst()
+                frame = frameSource.blockingFirst()
             }
             photoPicker.takePhoto(
                 frame,
-                cameraManager.orientation,
+                cameraManager.orientation.blockingFirst(),
                 PHOTO_BASE_NAME,
                 PHOTO_MIME_TYPE
             )
         }
     }
 
-    private fun startRecord() {
+    fun startRecord(frameSource: Observable<Any>) {
         record = videoRecorder.startRecord(
-            cameraManager.frameSource,
-            cameraManager.orientation,
+            frameSource,
+            cameraManager.orientation.blockingFirst(),
             VIDEO_BASE_NAME,
             VIDEO_MIME_TYPE
         )
     }
 
-    private fun stopRecord() {
+    fun stopRecord() {
         record?.close()
         record = null
     }

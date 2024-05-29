@@ -1,6 +1,5 @@
 package com.tomsksoft.videoeffectsrecorder.hilt
 
-import com.tomsksoft.videoeffectsrecorder.domain.boundary.Camera
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraManager
 import com.tomsksoft.videoeffectsrecorder.domain.usecase.CameraRecordManager
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
@@ -18,8 +17,8 @@ import javax.inject.Singleton
 object ManagersModule {
     @Provides
     @Singleton
-    fun provideCameraManager(camera: Camera) =
-        CameraManager(camera)
+    fun provideCameraManager() =
+        CameraManager()
 
     @Provides
     @Singleton

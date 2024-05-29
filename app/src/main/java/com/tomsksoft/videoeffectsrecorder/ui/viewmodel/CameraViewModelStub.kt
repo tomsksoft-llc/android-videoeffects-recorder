@@ -13,7 +13,6 @@ import java.io.InputStream
 object CameraViewModelStub: CameraViewModel {
     override val cameraUiState: StateFlow<CameraUiState> = MutableStateFlow(CameraUiState())
     override val cameraConfig: CameraConfig = CameraConfig()
-    override val isCameraEnabled = false
 
     override fun setSurface(surface: Surface?) = throw unimplementedError()
     override fun changeFlashMode() = throw unimplementedError()
