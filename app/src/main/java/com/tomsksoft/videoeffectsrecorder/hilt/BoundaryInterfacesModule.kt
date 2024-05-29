@@ -37,6 +37,16 @@ object BoundaryInterfacesModule {
 
     @Provides
     @Singleton
-    fun provideMediaProcessor(@ApplicationContext context: Context): MediaProcessor =
+    fun provideMediaPickerImpl(@ApplicationContext context: Context): MediaPickerImpl =
+        MediaPickerImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideMediaProcessor(mediaProcessorImpl: MediaProcessorImpl): MediaProcessor =
+        mediaProcessorImpl
+
+    @Provides
+    @Singleton
+    fun provideMediaProcessorImpl(@ApplicationContext context: Context): MediaProcessorImpl =
         MediaProcessorImpl(context)
 }

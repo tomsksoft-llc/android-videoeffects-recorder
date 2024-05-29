@@ -8,11 +8,9 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import com.effectssdk.tsvb.EffectsSDK
 import com.effectssdk.tsvb.pipeline.ImagePipeline
-import com.effectssdk.tsvb.pipeline.OnFrameAvailableListener
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.MediaProcessor
 
 class MediaProcessorImpl(
@@ -25,19 +23,14 @@ class MediaProcessorImpl(
     private val contentResolver: ContentResolver
         get() = context.contentResolver
 
-    /*override */private var image: Bitmap? = null//BehaviorSubject.create<Any>()
+    private var image: Bitmap? = null
     private var pipeline: ImagePipeline? = null
     private var surface: Surface? = null
     private fun createImagePipeline() {
         pipeline = factory.createImagePipeline(
             context
         )
-        //pipeline.setOutputSurface(surface)
     }
-
-    /*override fun onNewFrame(bitmap: Bitmap) {
-        TODO("Not yet implemented")
-    }*/
 
     override fun addMedia(uri: String) {
         //load image from external storage
@@ -51,12 +44,11 @@ class MediaProcessorImpl(
         createImagePipeline()
     }
 
-    override fun setSurface(surface: Surface?) {
+    fun setSurface(surface: Surface?) {
         this.surface = surface
         pipeline?.setOutputSurface(this.surface)
         pipeline?.process(image!!.copy(Bitmap.Config.ARGB_8888, true))
-        //pipeline?.process(image!!)
-        //pipeline?.process(image!!)
+
     }
     override fun processImage() {
         pipeline?.process(image!!)

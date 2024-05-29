@@ -67,7 +67,7 @@ class Camera(
 
     fun setSurface(surface: Surface?) {
         this.surface = surface
-        pipeline.setOutputSurface(this.surface)
+        //pipeline.setOutputSurface(this.surface)
     }
 
     private fun createPipeline(direction: Direction): CameraPipeline =
@@ -82,7 +82,7 @@ class Camera(
             setSegmentationGap(1)
             setOnFrameAvailableListener(this@Camera)
             setOrientationChangeListener(OrientationChangeListenerImpl())
-            setOutputSurface(surface)
+            //setOutputSurface(surface)
             startPipeline()
         }
 

@@ -101,6 +101,7 @@ fun MediaScreen(
                 AsyncImage(
                     model = currentMedia.uri,
                     contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             }
@@ -152,23 +153,12 @@ fun BoxScope.MediaViewBottomBar(
             }
         }
     }
-    /*currentMedia?.let {
-        MediaInfoBottomSheet(
-            media = it,
-            state = bottomSheetState,
-            albumsState = albumsState,
-            handler = handler
-        )
-    }*/
 }
 
 @Composable
 private fun MediaViewActions(
-    //currentIndex: Int,
     currentMedia: Media,
-    //handler: MediaHandleUseCase,
     onEditMedia: () -> Unit,
-    //showDeleteButton: Boolean
 ) {
     // Edit
     IconButton(onClick = onEditMedia) {
