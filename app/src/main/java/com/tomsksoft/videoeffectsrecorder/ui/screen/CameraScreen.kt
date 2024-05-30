@@ -188,7 +188,7 @@ fun CameraUi(viewModel: CameraViewModel, onGalleryClick: () -> Unit) {
 	else {
 		Box {
 			// effects sdk camera feed; stays behind all other elements
-			EffectsCameraPreview(snackbarHostState, viewModel::setSurface)
+			EffectsCameraPreview(viewModel::setSurface)
 			// black box for taking photo animation
 			Box(modifier = Modifier
 				.matchParentSize()
@@ -464,7 +464,7 @@ fun SecondaryEffectsOptions(
 }
 
 @Composable
-private fun ImageButton(
+fun ImageButton(
 	painter: Painter,
 	onClick: () -> Unit,
 	tint: Color = MaterialTheme.colorScheme.onPrimary,
@@ -509,8 +509,7 @@ private fun RoundedButton(
 }
 
 @Composable
-private fun EffectsCameraPreview(
-	snackbarHostState: SnackbarHostState,
+fun EffectsCameraPreview(
 	updateSurface: (Surface?) -> Unit
 ){
 	Box(
