@@ -160,6 +160,7 @@ fun CameraUi(viewModel: CameraViewModel, onGalleryClick: () -> Unit) {
 		}
 	}
 	// animation of taking photo
+	var isTakingPhoto = false
 	val alphaAnimation = remember { Animatable(0f) }
 	val alpha by alphaAnimation.asState()
 	val scope = rememberCoroutineScope()
@@ -251,13 +252,17 @@ fun CameraUi(viewModel: CameraViewModel, onGalleryClick: () -> Unit) {
 					cameraUiState = cameraUiState,
 					onFlipCameraClick = viewModel::flipCamera,
 					onCaptureClick = {
-						scope.launch {
-							val durationMs = 200
-							alphaAnimation.animateTo(0f, snap())
-							alphaAnimation.animateTo(1f, tween(durationMs / 2))
-							alphaAnimation.animateTo(0f, tween(durationMs / 2))
+						if (!isTakingPhoto) {
+							isTakingPhoto = true
+							scope.launch {
+								viewModel.captureImage()
+								val durationMs = 200
+								alphaAnimation.animateTo(0f, snap())
+								alphaAnimation.animateTo(1f, tween(durationMs / 2))
+								alphaAnimation.animateTo(0f, tween(durationMs / 2))
+								isTakingPhoto = false
+							}
 						}
-						viewModel.captureImage()
 					},
 					onLongPress = viewModel::startVideoRecording,
 					onRelease = viewModel::stopVideoRecording,
