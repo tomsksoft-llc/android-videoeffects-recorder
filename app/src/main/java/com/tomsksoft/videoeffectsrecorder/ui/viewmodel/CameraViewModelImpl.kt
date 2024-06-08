@@ -20,6 +20,7 @@ import com.tomsksoft.videoeffectsrecorder.ui.entity.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.entity.SecondaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.getNextFlashMode
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.reactivex.rxjava3.core.Single
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -219,9 +220,9 @@ class CameraViewModelImpl @Inject constructor(
         }
     }
 
-    override fun captureImage() {
+    override fun captureImage(): Single<*> {
         Log.d(TAG, "Capture image")
-        cameraRecordManager.takePhoto(camera!!.frame)
+        return cameraRecordManager.takePhoto(camera!!.frame)
     }
 
     override fun startVideoRecording() {

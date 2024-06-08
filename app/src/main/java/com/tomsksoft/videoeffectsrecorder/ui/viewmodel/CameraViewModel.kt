@@ -6,6 +6,7 @@ import com.tomsksoft.videoeffectsrecorder.domain.entity.ColorCorrection
 import com.tomsksoft.videoeffectsrecorder.ui.entity.CameraUiState
 import com.tomsksoft.videoeffectsrecorder.ui.entity.PrimaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.entity.SecondaryFiltersMode
+import io.reactivex.rxjava3.core.Single
 import kotlinx.coroutines.flow.StateFlow
 import java.io.InputStream
 
@@ -20,7 +21,7 @@ interface CameraViewModel {
     fun setBackground(bitmapStream: InputStream)
     fun removeBackground()
     fun flipCamera()
-    fun captureImage()
+    fun captureImage(): Single<*>
     fun startVideoRecording()
     fun stopVideoRecording()
     fun setBlurPower(value: Float)
