@@ -219,9 +219,9 @@ class CameraViewModelImpl @Inject constructor(
         }
     }
 
-    override fun captureImage() {
+    override fun captureImage(): Int {
         Log.d(TAG, "Capture image")
-        cameraRecordManager.takePhoto(camera!!.frame)
+        return cameraRecordManager.takePhoto(camera!!.frame)
     }
 
     override fun startVideoRecording() {

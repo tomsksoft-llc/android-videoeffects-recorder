@@ -93,7 +93,9 @@ import com.tomsksoft.videoeffectsrecorder.ui.entity.SecondaryFiltersMode
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModel
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelImpl
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.CameraViewModelStub
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 private const val REQUEST_PICK_PHOTO_BACKGROUND = 1
 private const val REQUEST_PICK_PHOTO_GRADING_SOURCE = 2
@@ -251,13 +253,17 @@ fun CameraUi(viewModel: CameraViewModel, onGalleryClick: () -> Unit) {
 					cameraUiState = cameraUiState,
 					onFlipCameraClick = viewModel::flipCamera,
 					onCaptureClick = {
+						val animDurMs = 200
+						val delayBeforeShotMs = viewModel.captureImage()
+						val delayBeforeAnimMs = max(0, delayBeforeShotMs - animDurMs)
 						scope.launch {
-							val durationMs = 200
+							if (delayBeforeAnimMs > 0)
+								delay(delayBeforeAnimMs.toLong())
+
 							alphaAnimation.animateTo(0f, snap())
-							alphaAnimation.animateTo(1f, tween(durationMs / 2))
-							alphaAnimation.animateTo(0f, tween(durationMs / 2))
+							alphaAnimation.animateTo(1f, tween(animDurMs / 2))
+							alphaAnimation.animateTo(0f, tween(animDurMs / 2))
 						}
-						viewModel.captureImage()
 					},
 					onLongPress = viewModel::startVideoRecording,
 					onRelease = viewModel::stopVideoRecording,

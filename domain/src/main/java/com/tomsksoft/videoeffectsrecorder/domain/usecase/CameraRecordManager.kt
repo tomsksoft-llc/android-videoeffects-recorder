@@ -26,17 +26,24 @@ class CameraRecordManager(
 
     val isRecording: Boolean get() = record != null
 
-    fun takePhoto(frameSource: Observable<Any>) {
+    fun takePhoto(frameSource: Observable<Any>): Int {
+        val flashDuration =
+            if (cameraManager.flashMode.blockingFirst() == FlashMode.AUTO)
+                1000
+            else
+                0
+
         scope.launch {
             val frame: Any
-            if (cameraManager.flashMode.blockingFirst() == FlashMode.AUTO) {
+
+            if (flashDuration > 0) {
                 cameraManager.setFlashEnabled(true)
-                delay(1000L)
+                delay(flashDuration.toLong())
                 frame = frameSource.blockingFirst()
                 cameraManager.setFlashEnabled(false)
-            } else {
+            } else
                 frame = frameSource.blockingFirst()
-            }
+
             photoPicker.takePhoto(
                 frame,
                 cameraManager.orientation.blockingFirst(),
@@ -44,6 +51,8 @@ class CameraRecordManager(
                 PHOTO_MIME_TYPE
             )
         }
+
+        return flashDuration
     }
 
     fun startRecord(frameSource: Observable<Any>) {
