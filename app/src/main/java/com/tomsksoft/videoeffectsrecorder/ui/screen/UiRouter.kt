@@ -12,12 +12,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.tomsksoft.videoeffectsrecorder.ui.viewmodel.GalleryViewModelImpl
 
-/* Routes */
-const val CAMERA_ROUTE = "CameraScreen"
-const val GALLERY_ROUTE = "GalleryScreen"
-const val GALLERY_LOCAL_ROUTE = "GalleryLocalScreen"
-const val GALLERY_ALL_ROUTE = "GalleryAllScreen"
-/* * */
+private const val ROUTE_CAMERA = "CameraScreen"
+private const val ROUTE_GALLERY = "GalleryScreen"
 
 object UiRouter {
 	@Composable
@@ -27,41 +23,16 @@ object UiRouter {
 		Scaffold { innerPadding ->
 			NavHost(
 				navController = navController,
-				startDestination = CAMERA_ROUTE,
+				startDestination = ROUTE_CAMERA,
 				modifier = Modifier
 					.fillMaxSize()
 					.padding(innerPadding)
 			) {
-				composable(route = CAMERA_ROUTE) {
-					CameraScreen{navController.navigate(GALLERY_ROUTE)}
+				composable(route = ROUTE_CAMERA) {
+					CameraScreen(onGalleryClick = { navController.navigate(ROUTE_GALLERY) })
 				}
-				composable(route = GALLERY_ROUTE) {
-					val galleryNavController = rememberNavController()
-					val viewModel = hiltViewModel<GalleryViewModelImpl>()
-					GalleryWrapper(
-						viewModel = viewModel,
-						navController = galleryNavController,
-						onGalleryLocalClick = { galleryNavController.navigate(GALLERY_LOCAL_ROUTE) },
-						onGalleryAllClick =  { galleryNavController.navigate(GALLERY_ALL_ROUTE) },
-						onCameraClick = {navController.navigate(CAMERA_ROUTE)},
-						mainContent = {
-							NavHost(
-								navController = galleryNavController,
-								startDestination = GALLERY_LOCAL_ROUTE,
-								route = GALLERY_ROUTE
-							) {
-								composable(route = GALLERY_LOCAL_ROUTE) {
-									GalleryScreenLocal(
-										viewModel = viewModel,
-										onCameraClick = { navController.navigate(CAMERA_ROUTE) }
-									)
-								}
-								composable(route = GALLERY_ALL_ROUTE) {
-									GalleryScreenAll(viewModel)
-								}
-							}
-						}
-					)
+				composable(route = ROUTE_GALLERY) {
+					GalleryScreen(onCameraClick = { navController.navigate(ROUTE_CAMERA) })
 				}
 			}
 		}
