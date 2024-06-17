@@ -1,8 +1,5 @@
 package com.tomsksoft.videoeffectsrecorder.data
 
-import android.annotation.SuppressLint
-import android.content.ContentResolver
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -11,9 +8,7 @@ import android.graphics.Rect
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.os.ParcelFileDescriptor
-import android.provider.MediaStore
 import android.util.Log
 import android.view.Surface
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
@@ -29,8 +24,7 @@ class VideoRecorderImpl(
         private const val TAG = "VideoRecorder"
     }
 
-    private val contentResolver: ContentResolver
-        get() = context.contentResolver
+    private val fileStorageAccessor = FileStorageAccessor(context)
 
     override fun startRecord(
         frameSource: Observable<Any>,
@@ -38,23 +32,12 @@ class VideoRecorderImpl(
         filename: String,
         mimeType: String
     ): AutoCloseable {
-        val (descriptor, uri) = createFile(filename, mimeType)
+        val (descriptor, uri) = fileStorageAccessor.createVideoFileDescriptor(
+            filename,
+            directoryName,
+            mimeType
+        )
         return Record(frameSource, orientation, descriptor, uri)
-    }
-
-    @SuppressLint("Recycle") // ParcelFileDescriptor will be freed by Record
-    private fun createFile(filename: String, mimeType: String): Pair<ParcelFileDescriptor, Uri> {
-        val uri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, ContentValues().apply {
-            put(MediaStore.Video.Media.DATE_ADDED, System.currentTimeMillis())
-            put(MediaStore.Video.Media.DISPLAY_NAME, filename)
-            put(MediaStore.Video.Media.MIME_TYPE, mimeType)
-            put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_DCIM}/$directoryName")
-        })!! // MediaStore concerns about making dirs and providing unique filenames on its own
-        return contentResolver.openFileDescriptor(uri, "w")!! to uri
-    }
-
-    private fun deleteFile(file: Uri) {
-        contentResolver.delete(file, null, null)
     }
 
     private inner class Record(
@@ -169,7 +152,7 @@ class VideoRecorderImpl(
             try {
                 mediaRecorder.stop()
             } catch (e: RuntimeException) { // no valid audio/video data has been received
-                deleteFile(file)
+                fileStorageAccessor.deleteFile(file)
             }
 
             mediaRecorder.release()
