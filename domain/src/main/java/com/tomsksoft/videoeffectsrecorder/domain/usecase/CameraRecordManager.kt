@@ -4,6 +4,8 @@ import com.tomsksoft.videoeffectsrecorder.domain.boundary.PhotoPicker
 import com.tomsksoft.videoeffectsrecorder.domain.boundary.VideoRecorder
 import com.tomsksoft.videoeffectsrecorder.domain.entity.FlashMode
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -22,29 +24,31 @@ class CameraRecordManager(
     }
 
     private var record: AutoCloseable? = null
-    private val scope = CoroutineScope(Dispatchers.IO)
 
     val isRecording: Boolean get() = record != null
 
-    fun takePhoto(frameSource: Observable<Any>) {
-        scope.launch {
-            val frame: Any
+    fun takePhoto(frameSource: Observable<Any>): Single<*> =
+        Observable.create { frameEmitter ->
+            fun emit() {
+                val frame = frameSource.blockingFirst()
+                frameEmitter.onNext(frame)
+                frameEmitter.onComplete()
+
+                photoPicker.takePhoto(
+                    frame,
+                    cameraManager.orientation.blockingFirst(),
+                    PHOTO_BASE_NAME,
+                    PHOTO_MIME_TYPE
+                )
+            }
+
             if (cameraManager.flashMode.blockingFirst() == FlashMode.AUTO) {
                 cameraManager.setFlashEnabled(true)
-                delay(1000L)
-                frame = frameSource.blockingFirst()
+                Thread.sleep(1000)
+                emit()
                 cameraManager.setFlashEnabled(false)
-            } else {
-                frame = frameSource.blockingFirst()
-            }
-            photoPicker.takePhoto(
-                frame,
-                cameraManager.orientation.blockingFirst(),
-                PHOTO_BASE_NAME,
-                PHOTO_MIME_TYPE
-            )
-        }
-    }
+            } else emit()
+        }.singleOrError()
 
     fun startRecord(frameSource: Observable<Any>) {
         record = videoRecorder.startRecord(
