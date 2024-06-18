@@ -8,7 +8,7 @@ import io.reactivex.rxjava3.subjects.BehaviorSubject
 class CameraManager {
     private val _orientation = BehaviorSubject.createDefault(0)
     private val _direction = BehaviorSubject.createDefault(Direction.FRONT)
-    private val _flashMode = BehaviorSubject.createDefault(FlashMode.AUTO)
+    private val _flashMode = BehaviorSubject.createDefault(FlashMode.OFF)
     private val _isFlashEnabled = BehaviorSubject.createDefault(false)
     private val _cameraConfig = BehaviorSubject.createDefault(CameraConfig())
 
