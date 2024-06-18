@@ -21,7 +21,7 @@ object CameraViewModelStub: CameraViewModel {
     override fun setBackground(bitmapStream: InputStream) = throw unimplementedError()
     override fun removeBackground() = throw unimplementedError()
     override fun flipCamera() = throw unimplementedError()
-    override fun captureImage() = throw unimplementedError()
+    override suspend fun captureImage() = throw unimplementedError()
     override fun startVideoRecording() = throw unimplementedError()
     override fun stopVideoRecording() = throw unimplementedError()
     override fun setBlurPower(value: Float) = throw unimplementedError()

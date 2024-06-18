@@ -22,28 +22,25 @@ class CameraRecordManager(
     }
 
     private var record: AutoCloseable? = null
-    private val scope = CoroutineScope(Dispatchers.IO)
 
     val isRecording: Boolean get() = record != null
 
-    fun takePhoto(frameSource: Observable<Any>) {
-        scope.launch {
-            val frame: Any
-            if (cameraManager.flashMode.blockingFirst() == FlashMode.AUTO) {
-                cameraManager.setFlashEnabled(true)
-                delay(1000L)
-                frame = frameSource.blockingFirst()
-                cameraManager.setFlashEnabled(false)
-            } else {
-                frame = frameSource.blockingFirst()
-            }
-            photoPicker.takePhoto(
-                frame,
-                cameraManager.orientation.blockingFirst(),
-                PHOTO_BASE_NAME,
-                PHOTO_MIME_TYPE
-            )
+    suspend fun takePhoto(frameSource: Observable<Any>) {
+        val frame: Any
+        if (cameraManager.flashMode.blockingFirst() == FlashMode.AUTO) {
+            cameraManager.setFlashEnabled(true)
+            delay(1000L)
+            frame = frameSource.blockingFirst()
+            cameraManager.setFlashEnabled(false)
+        } else {
+            frame = frameSource.blockingFirst()
         }
+        photoPicker.takePhoto(
+            frame,
+            cameraManager.orientation.blockingFirst(),
+            PHOTO_BASE_NAME,
+            PHOTO_MIME_TYPE
+        )
     }
 
     fun startRecord(frameSource: Observable<Any>) {

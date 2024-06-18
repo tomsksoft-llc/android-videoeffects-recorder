@@ -20,7 +20,7 @@ interface CameraViewModel {
     fun setBackground(bitmapStream: InputStream)
     fun removeBackground()
     fun flipCamera()
-    fun captureImage()
+    suspend fun captureImage()
     fun startVideoRecording()
     fun stopVideoRecording()
     fun setBlurPower(value: Float)
